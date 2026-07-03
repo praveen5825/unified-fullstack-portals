@@ -17,8 +17,18 @@ export const proposalsApi = {
 };
 
 export const duplicateCheckApi = {
+  // Ad-hoc check
   checkSynopsis: (formData) =>
     client.post(`${BASE}/check/`, formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     }),
+  
+  // Pending Queue
+  pendingQueue: () => client.get(`${BASE}/pending-queue/`),
+  runCheck: (id) => client.post(`${BASE}/run-check/${id}/`),
+  bulkRun: (proposal_ids) => client.post(`${BASE}/bulk-run-check/`, { proposal_ids }),
+  
+  // Review Results
+  reviewResults: () => client.get(`${BASE}/review-results/`),
+  updateReviewStatus: (id, review_status) => client.patch(`${BASE}/review-status/${id}/`, { review_status }),
 };

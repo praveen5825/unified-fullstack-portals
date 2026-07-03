@@ -1,15 +1,23 @@
-export default function ScoreBar({ label, value }) {
-  const color = value >= 70 ? 'bg-danger' : value >= 40 ? 'bg-warning' : 'bg-success';
+export default function ScoreBar({ label, value, color }) {
+  const pct = Math.min(100, Math.max(0, value ?? 0));
+
+  const getColor = () => {
+    if (color) return color;
+    if (pct >= 70) return 'var(--color-danger)';
+    if (pct >= 40) return 'var(--color-warning)';
+    return 'var(--color-success)';
+  };
+
   return (
     <div>
-      <div className="flex items-center justify-between text-xs mb-1">
-        <span className="text-text-muted">{label}</span>
-        <span className="text-text-primary font-medium">{value}%</span>
+      <div className="flex items-center justify-between mb-1.5">
+        <span className="text-xs" style={{ color: 'var(--color-text-faint)' }}>{label}</span>
+        <span className="text-xs font-semibold" style={{ color: getColor() }}>{pct.toFixed(0)}%</span>
       </div>
-      <div className="h-1.5 rounded-full bg-surface-3 overflow-hidden">
+      <div className="progress-bar">
         <div
-          className={`h-full rounded-full ${color} transition-all`}
-          style={{ width: `${Math.min(value, 100)}%` }}
+          className="progress-fill"
+          style={{ width: `${pct}%`, background: getColor() }}
         />
       </div>
     </div>

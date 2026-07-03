@@ -1,47 +1,139 @@
-import { Search, Bell, RefreshCw, LogOut } from 'lucide-react';
+import { Search, Bell, RefreshCw, Sun, Moon, LogOut } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 
 export default function Topbar({ title, subtitle, onRefresh }) {
   const { logout } = useAuth();
+  const { theme, toggleTheme, isDark } = useTheme();
 
   return (
-    <div className="flex items-center justify-between gap-4 mb-6">
+    <div className="flex items-center justify-between gap-4 mb-8">
+      {/* Title */}
       <div>
-        <h1 className="text-2xl font-semibold">{title}</h1>
-        {subtitle && <p className="text-sm text-text-muted mt-0.5">{subtitle}</p>}
+        <h1 className="text-2xl font-bold" style={{ color: 'var(--color-text-primary)' }}>
+          {title}
+        </h1>
+        {subtitle && (
+          <p className="text-sm mt-0.5" style={{ color: 'var(--color-text-muted)' }}>
+            {subtitle}
+          </p>
+        )}
       </div>
-      <div className="flex items-center gap-3">
-        <div className="hidden md:flex items-center gap-2 bg-surface-2 border border-border-soft rounded-xl px-3 py-2 w-72">
-          <Search size={15} className="text-text-faint" />
+
+      {/* Actions */}
+      <div className="flex items-center gap-2">
+        {/* Search */}
+        <div
+          className="hidden md:flex items-center gap-2 px-3.5 py-2 rounded-xl w-64 transition-all duration-200"
+          style={{
+            background: 'var(--color-surface-2)',
+            border: '1px solid var(--color-border-soft)',
+          }}
+          onFocus={(e) => {
+            e.currentTarget.style.borderColor = 'var(--color-accent)';
+            e.currentTarget.style.boxShadow = '0 0 0 3px var(--color-accent-soft)';
+          }}
+          onBlur={(e) => {
+            e.currentTarget.style.borderColor = 'var(--color-border-soft)';
+            e.currentTarget.style.boxShadow = 'none';
+          }}
+        >
+          <Search size={14} style={{ color: 'var(--color-text-faint)', flexShrink: 0 }} />
           <input
-            placeholder="Search proposals, researchers..."
-            className="bg-transparent text-sm outline-none w-full placeholder:text-text-faint"
+            placeholder="Search proposals..."
+            className="bg-transparent text-sm outline-none w-full"
+            style={{ color: 'var(--color-text-primary)' }}
           />
         </div>
+
+        {/* Refresh */}
         {onRefresh && (
-          <button
-            onClick={onRefresh}
-            className="w-9 h-9 rounded-xl bg-surface-2 border border-border-soft flex items-center justify-center hover:bg-surface-3 transition-colors"
-            aria-label="Refresh"
-          >
-            <RefreshCw size={15} className="text-text-muted" />
-          </button>
+          <TopbarButton onClick={onRefresh} title="Refresh data">
+            <RefreshCw size={15} />
+          </TopbarButton>
         )}
-        <button className="w-9 h-9 rounded-xl bg-surface-2 border border-border-soft flex items-center justify-center hover:bg-surface-3 transition-colors" aria-label="Notifications">
-          <Bell size={15} className="text-text-muted" />
-        </button>
+
+        {/* Notification Bell */}
+        <TopbarButton title="Notifications">
+          <div className="relative">
+            <Bell size={15} />
+            <span
+              className="absolute -top-1 -right-1 w-2 h-2 rounded-full"
+              style={{ background: 'var(--color-accent)' }}
+            />
+          </div>
+        </TopbarButton>
+
+        {/* Theme Toggle */}
         <button
-          onClick={logout}
-          className="w-9 h-9 rounded-xl bg-surface-2 border border-border-soft flex items-center justify-center hover:bg-danger-soft hover:text-danger transition-colors"
-          aria-label="Log out"
-          title="Log out"
+          onClick={toggleTheme}
+          className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-all duration-200"
+          style={{
+            background: 'var(--color-surface-2)',
+            border: '1px solid var(--color-border-soft)',
+            color: 'var(--color-text-muted)',
+          }}
+          title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = 'var(--color-surface-3)';
+            e.currentTarget.style.color = 'var(--color-text-primary)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = 'var(--color-surface-2)';
+            e.currentTarget.style.color = 'var(--color-text-muted)';
+          }}
         >
-          <LogOut size={15} className="text-text-muted" />
+          <div className="relative w-4 h-4">
+            <Sun
+              size={15}
+              className="absolute inset-0 transition-all duration-300"
+              style={{
+                opacity: isDark ? 0 : 1,
+                transform: isDark ? 'rotate(90deg) scale(0)' : 'rotate(0deg) scale(1)',
+              }}
+            />
+            <Moon
+              size={15}
+              className="absolute inset-0 transition-all duration-300"
+              style={{
+                opacity: isDark ? 1 : 0,
+                transform: isDark ? 'rotate(0deg) scale(1)' : 'rotate(-90deg) scale(0)',
+              }}
+            />
+          </div>
+          <span className="hidden sm:inline text-xs">{isDark ? 'Dark' : 'Light'}</span>
         </button>
-        <div className="w-9 h-9 rounded-xl accent-gradient flex items-center justify-center text-xs font-semibold text-white">
+
+        {/* Avatar */}
+        <div
+          className="accent-gradient w-9 h-9 rounded-xl flex items-center justify-center text-xs font-bold text-white cursor-pointer select-none"
+          style={{ boxShadow: '0 2px 8px rgba(139, 92, 246, 0.3)' }}
+          title="Admin account"
+        >
           AD
         </div>
       </div>
     </div>
+  );
+}
+
+function TopbarButton({ onClick, title, children }) {
+  return (
+    <button
+      onClick={onClick}
+      title={title}
+      className="w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-200"
+      style={{ background: 'var(--color-surface-2)', border: '1px solid var(--color-border-soft)', color: 'var(--color-text-muted)' }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.background = 'var(--color-surface-3)';
+        e.currentTarget.style.color = 'var(--color-text-primary)';
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.background = 'var(--color-surface-2)';
+        e.currentTarget.style.color = 'var(--color-text-muted)';
+      }}
+    >
+      {children}
+    </button>
   );
 }

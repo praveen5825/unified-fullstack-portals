@@ -10,6 +10,8 @@ import Placeholder from './pages/Placeholder';
 import Spark from './pages/Spark';
 import Pdfstar from './pages/Pdfstar';
 import Pgstar from './pages/Pgstar';
+import ProposalDetail from './pages/ProposalDetail';
+import EditProposal from './pages/EditProposal';
 
 export default function App() {
   return (
@@ -32,6 +34,8 @@ export default function App() {
             <Route path="spark" element={<Spark />} />
             <Route path="pdfstar" element={<Pdfstar />} />
             <Route path="pgstar" element={<Pgstar />} />
+            <Route path="proposals/:id" element={<ProposalDetail />} />
+            <Route path="proposals/:id/edit" element={<EditProposal />} />
           </Route>
         </Routes>
       </AuthProvider>

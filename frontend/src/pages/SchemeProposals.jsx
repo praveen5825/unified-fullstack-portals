@@ -1,8 +1,8 @@
 import { useEffect, useState, useMemo } from 'react';
-import { Eye, Pencil, Trash2, Download, FileText, Award, CheckCircle2, Clock } from 'lucide-react';
 import Topbar from '../layout/Topbar';
 import { proposalsApi } from '../api/duplicateCheck';
-
+import { Eye, Pencil, Trash2, Download, FileText, Award, CheckCircle2, Clock, FileSearch } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 const TABS = [
   { key: 'all', label: 'All Proposals', statusFilter: null },
   { key: 'selected', label: 'Selected', statusFilter: 'selected' },
@@ -19,7 +19,7 @@ export default function SchemeProposals({ scheme, title, subtitle }) {
   const [allProposals, setAllProposals] = useState([]); // full set, fetched once
   const [activeTab, setActiveTab] = useState('all');
   const [loading, setLoading] = useState(true);
-
+  const navigate = useNavigate();
   const load = async () => {
     setLoading(true);
     try {
@@ -162,18 +162,30 @@ export default function SchemeProposals({ scheme, title, subtitle }) {
                       </span>
                     </td>
                     <td className="px-5 py-3.5">
-                      <div className="flex items-center justify-end gap-1.5">
-                        <button className="p-1.5 rounded-lg hover:bg-surface-3" title="View">
-                          <Eye size={14} className="text-text-muted" />
-                        </button>
-                        <button className="p-1.5 rounded-lg hover:bg-surface-3" title="Edit">
-                          <Pencil size={14} className="text-text-muted" />
-                        </button>
-                        <button onClick={() => handleDelete(p.id)} className="p-1.5 rounded-lg hover:bg-danger-soft" title="Delete">
-                          <Trash2 size={14} className="text-danger" />
-                        </button>
-                      </div>
-                    </td>
+                        <div className="flex items-center justify-end gap-1.5">
+                            {p.document && (
+                                <a
+                                    href={p.document}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    onClick={(e) => e.stopPropagation()}
+                                    className="p-1.5 rounded-lg hover:bg-surface-3"
+                                    title="View Synopsis PDF"
+                                >
+                                    <FileSearch size={14} className="text-accent" />
+                                </a>
+                                )}
+                            <button onClick={() => navigate(`/proposals/${p.id}`)} className="p-1.5 rounded-lg hover:bg-surface-3" title="View Details">
+                            <Eye size={14} className="text-text-muted" />
+                            </button>
+                            <button onClick={() => navigate(`/proposals/${p.id}/edit`)} className="p-1.5 rounded-lg hover:bg-surface-3" title="Edit">
+                            <Pencil size={14} className="text-text-muted" />
+                            </button>
+                            <button onClick={() => handleDelete(p.id)} className="p-1.5 rounded-lg hover:bg-danger-soft" title="Delete">
+                            <Trash2 size={14} className="text-danger" />
+                            </button>
+                        </div>
+                        </td>
                   </tr>
                 ))}
               </tbody>

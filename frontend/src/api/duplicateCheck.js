@@ -9,6 +9,10 @@ export const proposalsApi = {
       headers: { 'Content-Type': 'multipart/form-data' },
     }),
   detail: (id) => client.get(`${BASE}/proposals/${id}/`),
+  update: (id, formData) =>
+    client.patch(`${BASE}/proposals/${id}/`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }),
   delete: (id) => client.delete(`${BASE}/proposals/${id}/`),
 };
 

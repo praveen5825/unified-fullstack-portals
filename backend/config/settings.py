@@ -173,6 +173,11 @@ CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TASK_TRACK_STARTED = True
 
+# Local dev: run tasks synchronously, no Redis/worker needed.
+# Set CELERY_TASK_ALWAYS_EAGER=False in production once Redis is set up.
+CELERY_TASK_ALWAYS_EAGER = os.environ.get('CELERY_TASK_ALWAYS_EAGER', 'True') == 'True'
+CELERY_TASK_EAGER_PROPAGATES = True
+
 # --- RELEVANT ADDITIONS: Tesseract path (Windows dev machine ke liye) ---
 # Agar Windows pe Tesseract PATH mein nahi hai, uncomment aur apna path daalo:
 # import pytesseract

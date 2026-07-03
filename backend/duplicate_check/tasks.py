@@ -74,3 +74,26 @@ def process_proposal_check(self, proposal_id):
 def process_bulk_check(proposal_ids):
     for pid in proposal_ids:
         process_proposal_check.delay(pid)
+
+
+
+@shared_task
+def extract_text_only(proposal_id):
+    """
+    Runs automatically right after every proposal is saved (any path --
+    New Proposal form, admin, future bulk import). Only extracts text,
+    never runs matching -- matching stays manual via the Duplicate Check
+    upload tool, exactly as designed.
+    """
+    try:
+        proposal = ResearchProposal.objects.get(id=proposal_id)
+    except ResearchProposal.DoesNotExist:
+        return
+    try:
+        text = extract_proposal_text(proposal.document.path)
+        proposal.extracted_text = text
+        proposal.extraction_status = ExtractionStatus.DONE
+        proposal.save(update_fields=['extracted_text', 'extraction_status'])
+    except Exception:
+        proposal.extraction_status = ExtractionStatus.FAILED
+        proposal.save(update_fields=['extraction_status'])

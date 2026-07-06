@@ -143,11 +143,34 @@ def check_synopsis(request):
         os.remove(tmp_path)
         return Response({'detail': 'Could not extract text from this document.', 'matches': []})
 
+    # Store for comparison caching
+    check_id = str(uuid.uuid4())
+    save_dir = os.path.join(settings.MEDIA_ROOT, 'synopsis_checks')
+    os.makedirs(save_dir, exist_ok=True)
+    
+    pdf_path = os.path.join(save_dir, f"{check_id}.pdf")
+    shutil.move(tmp_path, pdf_path)
+    
+    txt_path = os.path.join(save_dir, f"{check_id}.txt")
+    with open(txt_path, 'w', encoding='utf-8') as f:
+        f.write(text)
+
     # Exact match short-circuit
     t_hash = compute_text_hash(text)
     exact = ResearchProposal.objects.filter(text_hash=t_hash).first()
     if exact:
-        os.remove(tmp_path)
+        DocumentSimilarityResult.objects.update_or_create(
+            check_id=check_id,
+            matched_proposal=exact,
+            defaults={
+                'overall_score': 100.0,
+                'content_score': 100.0,
+                'title_score': 100.0,
+                'student_name_score': 100.0,
+                'college_score': 100.0,
+                'matching_terms': [],
+            }
+        )
         return Response({
             'matches': [{
                 'matched_proposal': {
@@ -163,20 +186,9 @@ def check_synopsis(request):
                 'matching_terms': [],
                 'exact_duplicate': True
             }],
-            'extracted_chars': len(text)
+            'extracted_chars': len(text),
+            'check_id': check_id
         })
-
-    # Store for comparison caching
-    check_id = str(uuid.uuid4())
-    save_dir = os.path.join(settings.MEDIA_ROOT, 'synopsis_checks')
-    os.makedirs(save_dir, exist_ok=True)
-    
-    pdf_path = os.path.join(save_dir, f"{check_id}.pdf")
-    shutil.move(tmp_path, pdf_path)
-    
-    txt_path = os.path.join(save_dir, f"{check_id}.txt")
-    with open(txt_path, 'w', encoding='utf-8') as f:
-        f.write(text)
 
     candidates = get_candidates_raw(title, student_name, college_name)
     if not candidates:

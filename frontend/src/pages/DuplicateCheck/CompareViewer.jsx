@@ -187,18 +187,45 @@ export default function CompareViewer() {
   const textRenderer = useCallback(makeTextRenderer(matchedSet), [matchData]);
 
   // ── Scroll sync handlers ────────────────────────────────────────────────
+  const activePanel = useRef(null);
+  const scrollTimeout = useRef(null);
+
   const handleSourceScroll = useCallback((e) => {
-    if (!syncScroll || isSyncing.current || !targetScrollRef.current) return;
-    isSyncing.current = true;
-    targetScrollRef.current.scrollTop = e.target.scrollTop;
-    requestAnimationFrame(() => { isSyncing.current = false; });
+    if (!syncScroll || !targetScrollRef.current) return;
+    if (activePanel.current === 'target') return; // Target is driving
+    activePanel.current = 'source';
+
+    const sourceMax = e.target.scrollHeight - e.target.clientHeight;
+    const targetMax = targetScrollRef.current.scrollHeight - targetScrollRef.current.clientHeight;
+    
+    if (sourceMax > 0 && targetMax > 0) {
+      const percentage = e.target.scrollTop / sourceMax;
+      targetScrollRef.current.scrollTop = percentage * targetMax;
+    }
+
+    clearTimeout(scrollTimeout.current);
+    scrollTimeout.current = setTimeout(() => {
+      activePanel.current = null;
+    }, 100);
   }, [syncScroll]);
 
   const handleTargetScroll = useCallback((e) => {
-    if (!syncScroll || isSyncing.current || !sourceScrollRef.current) return;
-    isSyncing.current = true;
-    sourceScrollRef.current.scrollTop = e.target.scrollTop;
-    requestAnimationFrame(() => { isSyncing.current = false; });
+    if (!syncScroll || !sourceScrollRef.current) return;
+    if (activePanel.current === 'source') return; // Source is driving
+    activePanel.current = 'target';
+
+    const targetMax = e.target.scrollHeight - e.target.clientHeight;
+    const sourceMax = sourceScrollRef.current.scrollHeight - sourceScrollRef.current.clientHeight;
+    
+    if (sourceMax > 0 && targetMax > 0) {
+      const percentage = e.target.scrollTop / targetMax;
+      sourceScrollRef.current.scrollTop = percentage * sourceMax;
+    }
+
+    clearTimeout(scrollTimeout.current);
+    scrollTimeout.current = setTimeout(() => {
+      activePanel.current = null;
+    }, 100);
   }, [syncScroll]);
 
   // ── Zoom helpers ────────────────────────────────────────────────────────

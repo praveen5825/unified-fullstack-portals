@@ -1,10 +1,17 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, Pencil, Trash2, FileText, ExternalLink, Calendar, MapPin, User, GraduationCap, Library, Hash } from 'lucide-react';
+import { ArrowLeft, Pencil, Trash2, FileText, ExternalLink, Calendar, MapPin, User, GraduationCap, Library, Hash, Loader2 } from 'lucide-react';
+import { Document, Page, pdfjs } from 'react-pdf';
+import 'react-pdf/dist/Page/TextLayer.css';
+import 'react-pdf/dist/Page/AnnotationLayer.css';
+
 import Topbar from '../layout/Topbar';
 import StatusBadge from '../components/StatusBadge';
 import SchemeTag from '../components/SchemeTag';
 import { proposalsApi } from '../api/duplicateCheck';
+import client from '../api/client';
+
+pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
 const FIELD_GROUPS = [
   {
@@ -83,6 +90,12 @@ export default function ProposalDetail() {
       </div>
     );
   }
+
+  const pdfUrl = proposal.document?.startsWith('http') 
+    ? proposal.document 
+    : proposal.document 
+      ? `${client.defaults.baseURL?.replace(/\/api$/, '') || 'http://localhost:8000'}${proposal.document}`
+      : null;
 
   return (
     <div>
@@ -173,18 +186,30 @@ export default function ProposalDetail() {
             </div>
           </div>
 
-          {proposal.document ? (
+          {pdfUrl ? (
             <>
-              <div className="rounded-xl overflow-hidden mb-4 bg-surface-2 relative group" style={{ height: 350, border: '1px solid var(--color-border-soft)' }}>
-                <iframe src={proposal.document} title="Synopsis" className="w-full h-full" />
+              <div 
+                className="rounded-xl overflow-hidden mb-4 bg-surface-2 relative group flex items-start justify-center p-2" 
+                style={{ height: 350, border: '1px solid var(--color-border-soft)', overflowY: 'auto', background: 'rgba(0,0,0,0.03)' }}
+              >
+                <Document
+                  file={pdfUrl}
+                  loading={<div className="flex flex-col items-center justify-center h-full text-muted mt-20"><Loader2 className="animate-spin mb-2" size={24} /></div>}
+                  error={<div className="text-xs text-danger text-center mt-20 px-4">Could not load preview.</div>}
+                >
+                  <div className="shadow-lg" style={{ maxWidth: '100%' }}>
+                    <Page pageNumber={1} width={260} renderTextLayer={false} renderAnnotationLayer={false} />
+                  </div>
+                </Document>
+                
                 <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
                   <span className="text-white text-xs font-medium px-3 py-1.5 rounded-lg bg-black/60 backdrop-blur-sm">
-                    Scroll to read
+                    Preview (Page 1)
                   </span>
                 </div>
               </div>
               <a
-                href={proposal.document}
+                href={pdfUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="btn btn-primary w-full justify-center"

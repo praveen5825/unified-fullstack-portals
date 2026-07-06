@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { UploadCloud, Loader2, ScanSearch, FileText, X, CheckCircle } from 'lucide-react';
 import Topbar from '../../layout/Topbar';
 import MatchCard from '../../components/MatchCard';
@@ -14,9 +15,11 @@ export default function DuplicateCheck() {
   const [collegeName, setCollegeName] = useState('');
   const [checking, setChecking] = useState(false);
   const [results, setResults] = useState(null);
+  const [checkId, setCheckId] = useState(null);
   const [error, setError] = useState(null);
   const [dragOver, setDragOver] = useState(false);
   const fileInputRef = useRef(null);
+  const navigate = useNavigate();
 
   const step = results !== null ? 2 : checking ? 1 : 0;
 
@@ -24,6 +27,7 @@ export default function DuplicateCheck() {
     if (f && f.type === 'application/pdf') {
       setFile(f);
       setResults(null);
+      setCheckId(null);
       setError(null);
     }
   };
@@ -49,6 +53,7 @@ export default function DuplicateCheck() {
       if (collegeName) formData.append('college_name', collegeName);
       const res = await duplicateCheckApi.checkSynopsis(formData);
       setResults(res.data.matches ?? []);
+      setCheckId(res.data.check_id);
     } catch {
       setError('Could not check this document. Please try again.');
     } finally {
@@ -62,6 +67,7 @@ export default function DuplicateCheck() {
     setStudentName('');
     setCollegeName('');
     setResults(null);
+    setCheckId(null);
     setError(null);
   };
 
@@ -255,8 +261,7 @@ export default function DuplicateCheck() {
                 <MatchCard
                   key={i}
                   match={m}
-                  onMarkReviewed={() => {}}
-                  onFlag={() => {}}
+                  onCompare={() => navigate(`/duplicate-check/compare/${checkId}/${m.matched_proposal.id}`)}
                 />
               ))}
             </div>

@@ -10,7 +10,7 @@ function getConfidenceBand(score) {
   return { label: 'Low Risk', color: 'var(--color-success)', bg: 'var(--color-success-soft)', dot: 'var(--color-success)' };
 }
 
-export default function MatchCard({ match, onMarkReviewed, onFlag }) {
+export default function MatchCard({ match, onMarkReviewed, onFlag, onCompare }) {
   const [showTerms, setShowTerms] = useState(false);
   const band = getConfidenceBand(match.overall_score);
   const { matched_proposal: m } = match;
@@ -56,6 +56,11 @@ export default function MatchCard({ match, onMarkReviewed, onFlag }) {
         {/* Score Bars */}
         <div className="space-y-3 mb-4">
           <ScoreBar label="Content similarity" value={match.content_score} />
+          {match.total_words > 0 && (
+             <div className="text-[10px] text-right mt-[-8px] font-medium tracking-wide" style={{ color: 'var(--color-text-faint)' }}>
+               {match.matched_words} of {match.total_words} words matched
+             </div>
+          )}
           <ScoreBar label="Title similarity" value={match.title_score} />
           <ScoreBar label="Student name match" value={match.student_name_score} />
           <ScoreBar label="College match" value={match.college_score} />
@@ -125,36 +130,73 @@ export default function MatchCard({ match, onMarkReviewed, onFlag }) {
 
         {/* Action Buttons */}
         <div className="flex gap-2">
-          <button
-            onClick={onMarkReviewed}
-            className="flex-1 flex items-center justify-center gap-1.5 text-sm py-2 rounded-xl font-medium transition-all duration-150"
-            style={{ background: 'var(--color-success-soft)', color: 'var(--color-success)', border: '1px solid var(--color-success)30' }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = 'var(--color-success)';
-              e.currentTarget.style.color = 'white';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = 'var(--color-success-soft)';
-              e.currentTarget.style.color = 'var(--color-success)';
-            }}
-          >
-            <CheckCircle2 size={14} /> Mark Cleared
-          </button>
-          <button
-            onClick={onFlag}
-            className="flex-1 flex items-center justify-center gap-1.5 text-sm py-2 rounded-xl font-medium transition-all duration-150"
-            style={{ background: 'var(--color-danger-soft)', color: 'var(--color-danger)', border: '1px solid var(--color-danger)30' }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = 'var(--color-danger)';
-              e.currentTarget.style.color = 'white';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = 'var(--color-danger-soft)';
-              e.currentTarget.style.color = 'var(--color-danger)';
-            }}
-          >
-            <Flag size={14} /> Flag Duplicate
-          </button>
+          {onCompare && (
+            <button
+              onClick={onCompare}
+              className="flex-1 flex items-center justify-center gap-1.5 text-sm py-2 rounded-xl font-medium transition-all duration-150"
+              style={{
+                background: "var(--color-accent-soft)",
+                color: "var(--color-accent)",
+                border: "1px solid var(--color-accent)30",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = "var(--color-accent)";
+                e.currentTarget.style.color = "white";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = "var(--color-accent-soft)";
+                e.currentTarget.style.color = "var(--color-accent)";
+              }}
+            >
+              <FileSearch size={14} /> Compare
+            </button>
+          )}
+
+          {onMarkReviewed && (
+            <>
+              <button
+                onClick={onMarkReviewed}
+                className="flex-1 flex items-center justify-center gap-1.5 text-sm py-2 rounded-xl font-medium transition-all duration-150"
+                style={{
+                  background: "var(--color-success-soft)",
+                  color: "var(--color-success)",
+                  border: "1px solid var(--color-success)30",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = "var(--color-success)";
+                  e.currentTarget.style.color = "white";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = "var(--color-success-soft)";
+                  e.currentTarget.style.color = "var(--color-success)";
+                }}
+              >
+                <CheckCircle2 size={14} /> Mark Cleared
+              </button>
+
+              {onFlag && (
+                <button
+                  onClick={onFlag}
+                  className="flex-1 flex items-center justify-center gap-1.5 text-sm py-2 rounded-xl font-medium transition-all duration-150"
+                  style={{
+                    background: "var(--color-danger-soft)",
+                    color: "var(--color-danger)",
+                    border: "1px solid var(--color-danger)30",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = "var(--color-danger)";
+                    e.currentTarget.style.color = "white";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = "var(--color-danger-soft)";
+                    e.currentTarget.style.color = "var(--color-danger)";
+                  }}
+                >
+                  <Flag size={14} /> Flag Duplicate
+                </button>
+              )}
+            </>
+          )}
         </div>
       </div>
     </div>

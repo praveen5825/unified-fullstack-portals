@@ -7,6 +7,7 @@ import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import NewProposal from './pages/NewProposal';
 import DuplicateCheck from './pages/DuplicateCheck';
+import CompareViewer from './pages/DuplicateCheck/CompareViewer';
 import Placeholder from './pages/Placeholder';
 import Spark from './pages/Spark';
 import Pdfstar from './pages/Pdfstar';
@@ -32,6 +33,7 @@ export default function App() {
               <Route path="proposals/new" element={<NewProposal />} />
               <Route path="bulk-import" element={<Placeholder title="Bulk Import" subtitle="Import proposals from Excel" />} />
               <Route path="duplicate-check" element={<DuplicateCheck />} />
+              <Route path="duplicate-check/compare/:checkId/:matchedProposalId" element={<CompareViewer />} />
               <Route path="spark" element={<Spark />} />
               <Route path="pdfstar" element={<Pdfstar />} />
               <Route path="pgstar" element={<Pgstar />} />

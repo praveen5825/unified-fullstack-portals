@@ -28,7 +28,7 @@ export default function SchemeProposals({ scheme, title, subtitle }) {
   const [activeTab, setActiveTab] = useState('all');
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [viewMode, setViewMode] = useState('grid'); // 'grid' | 'table'
+  const [viewMode, setViewMode] = useState('table'); // 'grid' | 'table'
   const navigate = useNavigate();
   const meta = SCHEME_META[scheme] || {};
 

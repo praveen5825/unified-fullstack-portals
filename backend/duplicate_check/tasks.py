@@ -3,6 +3,7 @@ from django.db import transaction
 
 from .models import ResearchProposal, DocumentSimilarityResult, ExtractionStatus
 from .services.extraction import extract_proposal_text
+from .services.hashing import compute_text_hash
 from .services.matching import (
     get_candidates, compute_content_scores, get_common_terms,
     compute_overall_score, determine_match_type, STORE_THRESHOLD,
@@ -32,8 +33,9 @@ def process_proposal_check(self, proposal_id):
     try:
         text = extract_proposal_text(proposal.document.path)
         proposal.extracted_text = text
+        proposal.text_hash = compute_text_hash(text)
         proposal.extraction_status = ExtractionStatus.DONE
-        proposal.save(update_fields=['extracted_text', 'extraction_status'])
+        proposal.save(update_fields=['extracted_text', 'extraction_status', 'text_hash'])
 
         candidates = list(get_candidates(proposal))
         if candidates and text:
@@ -92,8 +94,9 @@ def extract_text_only(proposal_id):
     try:
         text = extract_proposal_text(proposal.document.path)
         proposal.extracted_text = text
+        proposal.text_hash = compute_text_hash(text)
         proposal.extraction_status = ExtractionStatus.DONE
-        proposal.save(update_fields=['extracted_text', 'extraction_status'])
+        proposal.save(update_fields=['extracted_text', 'extraction_status', 'text_hash'])
     except Exception:
         proposal.extraction_status = ExtractionStatus.FAILED
         proposal.save(update_fields=['extraction_status'])

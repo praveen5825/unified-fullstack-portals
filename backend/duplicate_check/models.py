@@ -41,6 +41,7 @@ class ResearchProposal(models.Model):
 
     document = models.FileField(upload_to='proposals/%Y/%m/')
     extracted_text = models.TextField(blank=True, default='')
+    text_hash = models.CharField(max_length=64, db_index=True, blank=True)
     extraction_status = models.CharField(
         max_length=20, choices=ExtractionStatus.choices, default=ExtractionStatus.PENDING, db_index=True
     )
@@ -75,8 +76,9 @@ class DocumentSimilarityResult(models.Model):
         BOTH = 'both', 'Both'
 
     source_proposal = models.ForeignKey(
-        ResearchProposal, related_name='similarity_as_source', on_delete=models.CASCADE
+        ResearchProposal, related_name='similarity_as_source', on_delete=models.CASCADE, null=True, blank=True
     )
+    check_id = models.CharField(max_length=100, null=True, blank=True, db_index=True)
     matched_proposal = models.ForeignKey(
         ResearchProposal, related_name='similarity_as_match', on_delete=models.CASCADE
     )
@@ -88,6 +90,11 @@ class DocumentSimilarityResult(models.Model):
     college_score = models.FloatField(default=0)
     match_type = models.CharField(max_length=10, choices=MatchType.choices, default=MatchType.CONTENT)
     matching_terms = models.JSONField(default=list, blank=True)
+    
+    matched_paragraphs = models.JSONField(default=list, blank=True)
+    matched_sentences = models.JSONField(default=list, blank=True)
+    matched_words = models.IntegerField(default=0)
+    total_words = models.IntegerField(default=0)
 
     created_at = models.DateTimeField(auto_now_add=True)
 

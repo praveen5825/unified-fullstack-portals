@@ -4,7 +4,7 @@ from rest_framework.routers import DefaultRouter
 from .views import (
     ProposalViewSet, pending_queue, run_check, bulk_run_check,
     review_results, proposal_review_detail, update_review_status,
-    scheme_stats,check_synopsis,
+    scheme_stats, check_synopsis, compare_documents, download_compare_report
 )
 router = DefaultRouter()
 router.register('proposals', ProposalViewSet, basename='proposal')
@@ -19,4 +19,6 @@ urlpatterns = [
     path('<int:proposal_id>/run/', run_check, name='run-check'),
     path('proposals/stats/', scheme_stats, name='scheme-stats'), 
     path('check/', check_synopsis, name='check-synopsis'),
+    path('compare/<int:matched_proposal_id>/', compare_documents, name='compare-documents'),
+    path('compare/<int:matched_proposal_id>/report/', download_compare_report, name='download-compare-report'),
 ]

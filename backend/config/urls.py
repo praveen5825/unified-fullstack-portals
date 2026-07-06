@@ -21,14 +21,8 @@ from django.conf.urls.static import static
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-
     path('api/accounts/', include('accounts.urls')),
     path('api/duplicate-check/', include('duplicate_check.urls')),
-
-    # --- if you have these in your existing project, add them too: ---
-    # path('api/spark/', include('spark.urls')),
-    # path('api/pgstar/', include('pgstar.urls')),
-    # path('api/pdfstar/', include('pdfstar.urls')),
 ]
 
 if settings.DEBUG:

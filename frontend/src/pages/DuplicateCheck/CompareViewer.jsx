@@ -481,17 +481,15 @@ export default function CompareViewer() {
         />
 
         {/* Right PDF panel — matched proposal */}
-        <div className="flex-1 flex flex-col min-w-0">
-          <PdfPanel
-            label={`📁 Matched: ${mp.spark_id} — ${mp.title?.slice(0, 50) ?? ''}`}
-            pdfUrl={targetPdfUrl}
-            scale={scale}
-            textRenderer={textRenderer}
-            scrollRef={targetScrollRef}
-            onScroll={handleTargetScroll}
-            syncScroll={syncScroll}
-          />
-        </div>
+        <PdfPanel
+          label={`📁 Matched: ${mp.spark_id} — ${mp.title?.slice(0, 50) ?? ''}`}
+          pdfUrl={targetPdfUrl}
+          scale={scale}
+          textRenderer={textRenderer}
+          scrollRef={targetScrollRef}
+          onScroll={handleTargetScroll}
+          syncScroll={syncScroll}
+        />
 
         {/* Right sidebar — analysis panel */}
         {sidebarOpen && (

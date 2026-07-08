@@ -13,8 +13,8 @@ class ProposalSerializer(serializers.ModelSerializer):
         model = ResearchProposal
         fields = [
             'id', 'spark_id', 'scheme', 'state', 'college_name', 'guide_name',
-            'student_name', 'year', 'title', 'research_area', 'status',
-            'document', 'extraction_status', 'review_status',
+            'student_name', 'year', 'session', 'title', 'research_area', 'status',
+            'document', 'final_report', 'extraction_status', 'review_status',
             'created_at', 'updated_at',
         ]
         read_only_fields = ['extraction_status', 'review_status', 'created_at', 'updated_at']

@@ -27,19 +27,29 @@ class ReviewStatus(models.TextChoices):
     FLAGGED = 'flagged', 'Flagged Duplicate'
 
 
+class ResearchType(models.TextChoices):
+    CLINICAL = 'Clinical Research', 'Clinical Research'
+    FUNDAMENTAL = 'FUNDAMENTAL RESEARCH', 'FUNDAMENTAL RESEARCH'
+    PHARMACEUTICAL = 'Pharmaceutical research / Drug Standardization / Techno innovation', 'Pharmaceutical research / Drug Standardization / Techno innovation'
+    LITERARY = 'LITERARY RESEARCH', 'LITERARY RESEARCH'
+    PHARMACOLOGICAL = 'Pharmacological Research', 'Pharmacological Research'
+
+
 class ResearchProposal(models.Model):
     spark_id = models.CharField(max_length=50, db_index=True)
-    scheme = models.CharField(max_length=10, choices=Scheme.choices, db_index=True)
-    state = models.CharField(max_length=100, db_index=True)
-    college_name = models.CharField(max_length=255)
-    guide_name = models.CharField(max_length=255)
-    student_name = models.CharField(max_length=255, db_index=True)
-    year = models.CharField(max_length=20, db_index=True)
-    title = models.TextField()
-    research_area = models.CharField(max_length=255, db_index=True)
-    status = models.CharField(max_length=20, choices=ProposalStatus.choices, db_index=True)
+    scheme = models.CharField(max_length=10, choices=Scheme.choices, db_index=True, blank=True, default='')
+    state = models.CharField(max_length=100, db_index=True, blank=True, default='')
+    college_name = models.CharField(max_length=255, blank=True, default='')
+    guide_name = models.CharField(max_length=255, blank=True, default='')
+    student_name = models.CharField(max_length=255, db_index=True, blank=True, default='')
+    year = models.CharField(max_length=20, db_index=True, blank=True, default='')
+    session = models.CharField(max_length=20, db_index=True, blank=True, default='')
+    title = models.TextField(blank=True, default='')
+    research_area = models.CharField(max_length=255, db_index=True, blank=True, default='')
+    status = models.CharField(max_length=20, choices=ProposalStatus.choices, db_index=True, blank=True, default='received')
 
-    document = models.FileField(upload_to='proposals/%Y/%m/')
+    document = models.FileField(upload_to='proposals/%Y/%m/', blank=True, null=True)
+    final_report = models.FileField(upload_to='final_reports/%Y/%m/', blank=True, null=True)
     extracted_text = models.TextField(blank=True, default='')
     text_hash = models.CharField(max_length=64, db_index=True, blank=True)
     extraction_status = models.CharField(
@@ -57,12 +67,11 @@ class ResearchProposal(models.Model):
             models.Index(fields=['scheme', 'status']),
             models.Index(fields=['state', 'year']),
             models.Index(fields=['research_area', 'status']),
+            models.Index(fields=['session']),
             GinIndex(fields=['title'], name='title_trgm_idx', opclasses=['gin_trgm_ops']),
             GinIndex(fields=['student_name'], name='student_trgm_idx', opclasses=['gin_trgm_ops']),
         ]
-        constraints = [
-            models.UniqueConstraint(fields=['spark_id', 'scheme'], name='unique_spark_id_per_scheme')
-        ]
+        # Removed unique constraint to allow duplicate spark_id + scheme combinations
         ordering = ['-created_at']
 
     def __str__(self):

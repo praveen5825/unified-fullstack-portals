@@ -3,7 +3,7 @@ import Topbar from '../layout/Topbar';
 import { proposalsApi } from '../api/duplicateCheck';
 import {
   Eye, Pencil, Trash2, Download, FileSearch, Search, X,
-  LayoutGrid, List, Sparkles, MapPin, User, FileText, ChevronRight
+  LayoutGrid, List, Sparkles, MapPin, User, FileText, ChevronRight, BookOpen
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import StatusBadge from '../components/StatusBadge';
@@ -75,10 +75,11 @@ export default function SchemeProposals({ scheme, title, subtitle }) {
   };
 
   const exportCsv = () => {
-    const headers = ['Spark ID', 'Student', 'Guide', 'College', 'State', 'Year', 'Title', 'Research Area', 'Status'];
+    const headers = ['Spark ID', 'Session', 'Student', 'Guide', 'College', 'State', 'Year', 'Title', 'Research Type', 'Status', 'Final Report'];
     const rows = filtered.map((p) => [
-      p.spark_id, p.student_name, p.guide_name, p.college_name,
+      p.spark_id, p.session, p.student_name, p.guide_name, p.college_name,
       p.state, p.year, p.title, p.research_area, p.status,
+      p.final_report ? 'Uploaded' : '',
     ]);
     const csv = [headers, ...rows]
       .map((row) => row.map((cell) => `"${String(cell ?? '').replace(/"/g, '""')}"`).join(','))
@@ -322,7 +323,7 @@ export default function SchemeProposals({ scheme, title, subtitle }) {
             <table className="w-full text-sm">
               <thead>
                 <tr style={{ borderBottom: '1px solid var(--color-border-soft)', background: 'var(--color-surface-2)' }}>
-                  {['Spark ID', 'Student', 'Research Topic', 'Institution', 'Status', 'Actions'].map((h) => (
+                  {['Spark ID', 'Session', 'Student', 'Research Topic', 'Institution', 'Status', 'Actions'].map((h) => (
                     <th key={h} className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-faint)' }}>{h}</th>
                   ))}
                 </tr>
@@ -338,6 +339,15 @@ export default function SchemeProposals({ scheme, title, subtitle }) {
                   >
                     <td className="px-6 py-4 font-mono text-xs font-bold whitespace-nowrap" style={{ color: meta.color }}>
                       {p.spark_id}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      {p.session ? (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-lg text-[10px] font-bold" style={{ background: 'var(--color-accent-soft)', color: 'var(--color-accent)', border: '1px solid var(--color-accent)22' }}>
+                          {p.session}
+                        </span>
+                      ) : (
+                        <span style={{ color: 'var(--color-text-faint)' }}>—</span>
+                      )}
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
@@ -370,8 +380,13 @@ export default function SchemeProposals({ scheme, title, subtitle }) {
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-1 opacity-40 group-hover:opacity-100 transition-opacity duration-200">
                         {p.document && (
-                          <a href={p.document} target="_blank" rel="noopener noreferrer" className="p-2 rounded-lg transition-colors" style={{ color: meta.color }} onMouseEnter={(e) => e.currentTarget.style.background = `${meta.color}20`} onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'} title="View PDF">
+                          <a href={p.document} target="_blank" rel="noopener noreferrer" className="p-2 rounded-lg transition-colors" style={{ color: meta.color }} onMouseEnter={(e) => e.currentTarget.style.background = `${meta.color}20`} onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'} title="View Proposal PDF">
                             <FileSearch size={15} />
+                          </a>
+                        )}
+                        {p.final_report && (
+                          <a href={p.final_report} target="_blank" rel="noopener noreferrer" className="p-2 rounded-lg transition-colors" style={{ color: 'var(--color-success)' }} onMouseEnter={(e) => e.currentTarget.style.background = 'var(--color-success-soft)'} onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'} title="View Final Report">
+                            <BookOpen size={15} />
                           </a>
                         )}
                         <IconBtn onClick={() => navigate(`/proposals/${p.id}`)} title="View"><Eye size={15} /></IconBtn>

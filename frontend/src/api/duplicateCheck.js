@@ -24,8 +24,25 @@ export const duplicateCheckApi = {
     }),
   getComparison: (checkId, matchedId) =>
     client.get(`${BASE}/compare/${matchedId}/?check_id=${checkId}`),
-  downloadReportUrl: (checkId, matchedId) =>
-    `${client.defaults.baseURL || 'http://localhost:8000/api'}${BASE}/compare/${matchedId}/report/?check_id=${checkId}`,
+
+  // Was: downloadReportUrl(...) returning a plain string used in <a href>/window.open.
+  // That bypasses axios entirely, so the JWT Authorization header never gets attached
+  // -> backend correctly returns 401. This does the actual authenticated fetch instead.
+  downloadReport: async (checkId, matchedId) => {
+    const res = await client.get(`${BASE}/compare/${matchedId}/report/`, {
+      params: { check_id: checkId },
+      responseType: 'blob',
+    });
+    const blob = new Blob([res.data], { type: 'application/pdf' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `plagiarism_report_${checkId.slice(0, 8)}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  },
 
   // Pending Queue
   pendingQueue: () => client.get(`${BASE}/pending/`),
@@ -34,7 +51,6 @@ export const duplicateCheckApi = {
 
   // Review Results
   reviewResults: () => client.get(`${BASE}/review/`),
-  // ✅ Fixed: was /review-status/${id}/ — actual URL pattern is /review/${id}/status/
   updateReviewStatus: (id, review_status) =>
     client.patch(`${BASE}/review/${id}/status/`, { review_status }),
 };

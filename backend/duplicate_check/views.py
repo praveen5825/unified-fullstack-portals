@@ -156,23 +156,28 @@ def check_synopsis(request):
         f.write(text)
 
     # Exact match short-circuit
+    # Exact match short-circuit — get ALL proposals sharing this hash, not just one.
+    # Multiple students can legitimately submit the exact same (copied) text,
+    # and the reviewer needs to see every one of them, not just the first found.
     t_hash = compute_text_hash(text)
-    exact = ResearchProposal.objects.filter(text_hash=t_hash).first()
-    if exact:
-        DocumentSimilarityResult.objects.update_or_create(
-            check_id=check_id,
-            matched_proposal=exact,
-            defaults={
-                'overall_score': 100.0,
-                'content_score': 100.0,
-                'title_score': 100.0,
-                'student_name_score': 100.0,
-                'college_score': 100.0,
-                'matching_terms': [],
-            }
-        )
-        return Response({
-            'matches': [{
+    exact_matches = list(ResearchProposal.objects.filter(text_hash=t_hash))
+
+    if exact_matches:
+        exact_results = []
+        for exact in exact_matches:
+            DocumentSimilarityResult.objects.update_or_create(
+                check_id=check_id,
+                matched_proposal=exact,
+                defaults={
+                    'overall_score': 100.0,
+                    'content_score': 100.0,
+                    'title_score': 100.0,
+                    'student_name_score': 100.0,
+                    'college_score': 100.0,
+                    'matching_terms': [],
+                }
+            )
+            exact_results.append({
                 'matched_proposal': {
                     'id': exact.id, 'spark_id': exact.spark_id, 'scheme': exact.scheme,
                     'student_name': exact.student_name, 'college_name': exact.college_name,
@@ -184,10 +189,45 @@ def check_synopsis(request):
                 'student_name_score': 100.0,
                 'college_score': 100.0,
                 'matching_terms': [],
-                'exact_duplicate': True
-            }],
+                'exact_duplicate': True,
+            })
+
+        # Still check for additional NEAR-duplicates beyond the exact ones,
+        # so a partial-rewrite by a third student isn't silently missed.
+        exact_ids = [e.id for e in exact_matches]
+        candidates = [c for c in get_candidates_raw(title, student_name, college_name) if c.id not in exact_ids]
+
+        near_results = []
+        if candidates:
+            candidate_texts = [c.extracted_text for c in candidates]
+            scores, vectorizer, tfidf_matrix = compute_content_scores(text, candidate_texts)
+            for idx, cand in enumerate(candidates):
+                content_pct = round(scores[idx] * 100, 2)
+                if content_pct < 30:
+                    continue
+                title_pct = round(getattr(cand, 'title_sim', 0) * 100, 2)
+                student_pct = round(getattr(cand, 'student_sim', 0) * 100, 2)
+                college_pct = round(getattr(cand, 'college_sim', 0) * 100, 2)
+                overall = compute_overall_score(content_pct, title_pct, student_pct, college_pct) if (title or student_name) else content_pct
+                near_results.append({
+                    'matched_proposal': {
+                        'id': cand.id, 'spark_id': cand.spark_id, 'scheme': cand.scheme,
+                        'student_name': cand.student_name, 'college_name': cand.college_name,
+                        'status': cand.status, 'title': cand.title,
+                    },
+                    'overall_score': overall,
+                    'content_score': content_pct,
+                    'title_score': title_pct,
+                    'student_name_score': student_pct,
+                    'college_score': college_pct,
+                    'matching_terms': get_common_terms(vectorizer, tfidf_matrix, idx + 1),
+                })
+
+        all_results = exact_results + sorted(near_results, key=lambda r: r['overall_score'], reverse=True)
+        return Response({
+            'matches': all_results[:20],
             'extracted_chars': len(text),
-            'check_id': check_id
+            'check_id': check_id,
         })
 
     candidates = get_candidates_raw(title, student_name, college_name)

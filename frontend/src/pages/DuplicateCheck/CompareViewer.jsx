@@ -427,19 +427,12 @@ export default function CompareViewer() {
           </button>
 
           {/* Download report */}
-          <a
-            href={duplicateCheckApi.downloadReportUrl(checkId, matchedProposalId)}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all"
-            style={{
-              background: 'var(--color-surface-2)',
-              color: 'var(--color-text-primary)',
-              border: '1px solid var(--color-border-soft)',
-            }}
-            onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--color-surface-3)'; }}
-            onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--color-surface-2)'; }}
-          >
-            <Download size={13} /> Report
-          </a>
+         <button
+          onClick={() => duplicateCheckApi.downloadReport(checkId, matchedProposalId)}
+          className="flex items-center gap-1.5 text-sm bg-surface-2 border border-border-soft px-3.5 py-2 rounded-xl hover:bg-surface-3"
+        >
+          <Download size={14} /> Report
+        </button>
 
           {/* Mark cleared */}
           <button

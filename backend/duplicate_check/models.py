@@ -29,9 +29,9 @@ class ReviewStatus(models.TextChoices):
 
 class ResearchType(models.TextChoices):
     CLINICAL = 'Clinical Research', 'Clinical Research'
-    FUNDAMENTAL = 'FUNDAMENTAL RESEARCH', 'FUNDAMENTAL RESEARCH'
-    PHARMACEUTICAL = 'Pharmaceutical research / Drug Standardization / Techno innovation', 'Pharmaceutical research / Drug Standardization / Techno innovation'
-    LITERARY = 'LITERARY RESEARCH', 'LITERARY RESEARCH'
+    FUNDAMENTAL = 'Fundamental Research', 'Fundamental Research'
+    PHARMACEUTICAL = 'Pharmaceutical Research / Drug Standardization / Techno Innovation', 'Pharmaceutical Research / Drug Standardization / Techno Innovation'
+    LITERARY = 'Literary Research', 'Literary Research'
     PHARMACOLOGICAL = 'Pharmacological Research', 'Pharmacological Research'
 
 

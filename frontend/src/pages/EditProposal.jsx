@@ -3,6 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import Topbar from '../layout/Topbar';
 import { proposalsApi } from '../api/duplicateCheck';
 import { SCHEMES, STATUSES, SESSIONS, RESEARCH_TYPES, INDIAN_STATES, UNION_TERRITORIES } from '../constants/proposals';
+import CustomDropdown from '../components/CustomDropdown';
+import { Sparkles, Calendar, MapPin, FlaskConical, Activity } from 'lucide-react';
 
 export default function EditProposal() {
   const { id } = useParams();
@@ -68,18 +70,24 @@ export default function EditProposal() {
 
           <div>
             <label className={labelClass}>Scheme</label>
-            <select name="scheme" value={form.scheme || ''} onChange={handleChange} className={inputClass}>
-              <option value="">— Select Scheme —</option>
-              {SCHEMES.map((s) => <option key={s} value={s}>{s}</option>)}
-            </select>
+            <CustomDropdown
+              value={form.scheme || ''}
+              onChange={(val) => handleChange({ target: { name: 'scheme', value: val } })}
+              options={SCHEMES.map((s) => ({ label: s, value: s }))}
+              placeholder="— Select Scheme —"
+              icon={Sparkles}
+            />
           </div>
 
           <div>
             <label className={labelClass}>Session</label>
-            <select name="session" value={form.session || ''} onChange={handleChange} className={inputClass}>
-              <option value="">— Select Session —</option>
-              {SESSIONS.map((s) => <option key={s} value={s}>{s}</option>)}
-            </select>
+            <CustomDropdown
+              value={form.session || ''}
+              onChange={(val) => handleChange({ target: { name: 'session', value: val } })}
+              options={SESSIONS.map((s) => ({ label: s, value: s }))}
+              placeholder="— Select Session —"
+              icon={Calendar}
+            />
           </div>
 
           <div>
@@ -89,15 +97,17 @@ export default function EditProposal() {
 
           <div className="col-span-2">
             <label className={labelClass}>State / Union Territory</label>
-            <select name="state" value={form.state || ''} onChange={handleChange} className={inputClass}>
-              <option value="">— Select State / UT —</option>
-              <optgroup label="─── States ───">
-                {INDIAN_STATES.map((s) => <option key={s} value={s}>{s}</option>)}
-              </optgroup>
-              <optgroup label="─── Union Territories ───">
-                {UNION_TERRITORIES.map((s) => <option key={s} value={s}>{s}</option>)}
-              </optgroup>
-            </select>
+            <CustomDropdown
+              value={form.state || ''}
+              onChange={(val) => handleChange({ target: { name: 'state', value: val } })}
+              options={[
+                { group: 'States', items: INDIAN_STATES.map((s) => ({ label: s, value: s })) },
+                { group: 'Union Territories', items: UNION_TERRITORIES.map((s) => ({ label: s, value: s })) },
+              ]}
+              placeholder="— Select State / UT —"
+              searchable={true}
+              icon={MapPin}
+            />
           </div>
 
           <div className="col-span-2">
@@ -122,17 +132,25 @@ export default function EditProposal() {
 
           <div>
             <label className={labelClass}>Research Type</label>
-            <select name="research_area" value={form.research_area || ''} onChange={handleChange} className={inputClass}>
-              <option value="">— Select Research Type —</option>
-              {RESEARCH_TYPES.map((r) => <option key={r} value={r}>{r}</option>)}
-            </select>
+            <CustomDropdown
+              value={form.research_area || ''}
+              onChange={(val) => handleChange({ target: { name: 'research_area', value: val } })}
+              options={RESEARCH_TYPES.map((r) => ({ label: r, value: r }))}
+              placeholder="— Select Research Type —"
+              icon={FlaskConical}
+              searchable={true}
+            />
           </div>
 
           <div>
             <label className={labelClass}>Status</label>
-            <select name="status" value={form.status || 'received'} onChange={handleChange} className={inputClass}>
-              {STATUSES.map((s) => <option key={s} value={s} className="capitalize">{s}</option>)}
-            </select>
+            <CustomDropdown
+              value={form.status || 'received'}
+              onChange={(val) => handleChange({ target: { name: 'status', value: val } })}
+              options={STATUSES.map((s) => ({ label: s.charAt(0).toUpperCase() + s.slice(1), value: s }))}
+              placeholder="— Select Status —"
+              icon={Activity}
+            />
           </div>
 
           <div className="col-span-2">

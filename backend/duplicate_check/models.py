@@ -118,3 +118,24 @@ class DocumentSimilarityResult(models.Model):
 
     def __str__(self):
         return f"{self.source_proposal.spark_id} <-> {self.matched_proposal.spark_id}: {self.overall_score}%"
+
+class ProposalEmbedding(models.Model):
+    """
+    Stores serialized NumPy embeddings for ResearchProposals.
+    Kept separate to avoid bloating the core ResearchProposal model and to allow
+    fast in-memory deserialization of all document vectors.
+    """
+    proposal = models.OneToOneField(
+        ResearchProposal, on_delete=models.CASCADE, related_name='embedding'
+    )
+    # 1D numpy array (float32) for the document-level embedding (mean pooled)
+    doc_embedding = models.BinaryField(null=True, blank=True)
+    # 2D numpy array (float32) for paragraph-level embeddings (N x embedding_dim)
+    para_embeddings = models.BinaryField(null=True, blank=True)
+    # The actual text of the paragraphs corresponding to para_embeddings
+    paragraphs = models.JSONField(default=list, blank=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    def __str__(self):
+        return f"Embedding for {self.proposal.spark_id}"

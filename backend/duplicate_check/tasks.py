@@ -1,14 +1,28 @@
 from celery import shared_task
 from django.db import transaction
 
-from .models import ResearchProposal, DocumentSimilarityResult, ExtractionStatus
+from .models import ResearchProposal, DocumentSimilarityResult, ExtractionStatus, ProposalEmbedding
 from .services.extraction import extract_proposal_text
 from .services.hashing import compute_text_hash
+from .services.embeddings import compute_proposal_embeddings, serialize_embedding
 from .services.matching import (
     get_candidates, compute_content_scores, get_common_terms,
     compute_overall_score, determine_match_type, STORE_THRESHOLD,
 )
 
+
+def generate_and_save_embedding(proposal, text):
+    if not text:
+        return
+    doc_emb, para_emb, paragraphs = compute_proposal_embeddings(text)
+    ProposalEmbedding.objects.update_or_create(
+        proposal=proposal,
+        defaults={
+            'doc_embedding': serialize_embedding(doc_emb),
+            'para_embeddings': serialize_embedding(para_emb),
+            'paragraphs': paragraphs
+        }
+    )
 
 @shared_task(bind=True, max_retries=2)
 def process_proposal_check(self, proposal_id):
@@ -36,15 +50,16 @@ def process_proposal_check(self, proposal_id):
         proposal.text_hash = compute_text_hash(text)
         proposal.extraction_status = ExtractionStatus.DONE
         proposal.save(update_fields=['extracted_text', 'extraction_status', 'text_hash'])
+        
+        # Generate semantic embeddings for duplicate matching
+        generate_and_save_embedding(proposal, text)
 
-        candidates = list(get_candidates(proposal))
-        if candidates and text:
-            candidate_texts = [c.extracted_text for c in candidates]
-            content_scores, vectorizer, tfidf_matrix = compute_content_scores(text, candidate_texts)
-
+        semantic_results = get_semantic_candidates(proposal)
+        if semantic_results:
             with transaction.atomic():
-                for idx, candidate in enumerate(candidates):
-                    content_pct = round(content_scores[idx] * 100, 2)
+                for result in semantic_results:
+                    candidate = result['candidate']
+                    content_pct = round(result['content_score'] * 100, 2)
                     title_pct = round(getattr(candidate, 'title_sim', 0) * 100, 2)
                     student_pct = round(getattr(candidate, 'student_sim', 0) * 100, 2)
                     college_pct = round(getattr(candidate, 'college_sim', 0) * 100, 2)
@@ -63,7 +78,8 @@ def process_proposal_check(self, proposal_id):
                             'student_name_score': student_pct,
                             'college_score': college_pct,
                             'match_type': determine_match_type(content_pct, student_pct),
-                            'matching_terms': get_common_terms(vectorizer, tfidf_matrix, idx + 1),
+                            'matched_paragraphs': result['matched_paragraphs'],
+                            'matching_terms': [], # Deprecated in favor of matched_paragraphs
                         }
                     )
     except Exception as exc:
@@ -97,6 +113,8 @@ def extract_text_only(proposal_id):
         proposal.text_hash = compute_text_hash(text)
         proposal.extraction_status = ExtractionStatus.DONE
         proposal.save(update_fields=['extracted_text', 'extraction_status', 'text_hash'])
+        
+        generate_and_save_embedding(proposal, text)
     except Exception:
         proposal.extraction_status = ExtractionStatus.FAILED
         proposal.save(update_fields=['extraction_status'])

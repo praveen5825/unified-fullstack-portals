@@ -9,11 +9,12 @@ import { Document, Page, pdfjs } from 'react-pdf';
 import 'react-pdf/dist/Page/TextLayer.css';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 
-import Topbar from '../../layout/Topbar';
 import { duplicateCheckApi } from '../../api/duplicateCheck';
 import client from '../../api/client';
 import ParagraphBreakdown from '../../components/ParagraphBreakdown';
 import MatchingStats from '../../components/MatchingStats';
+import { buildHighlightData } from '../../utils/textHighlighting';
+import Topbar from '../../layout/Topbar';
 
 // Configure PDF.js worker (unpkg CDN — no local worker setup required)
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
@@ -22,30 +23,12 @@ const MIN_SCALE = 0.5;
 const MAX_SCALE = 2.5;
 const SCALE_STEP = 0.15;
 
-// ── Helpers ────────────────────────────────────────────────────────────────
-
-/**
- * Build a Set of lowercased sentence texts for O(1) highlight lookup.
- * We also include sub-spans so partial text-layer items still match.
- */
-function buildMatchedTextSet(matchedSentences = []) {
-  const set = new Set();
-  for (const s of matchedSentences) {
-    if (!s.text) continue;
-    const clean = s.text.toLowerCase().trim();
-    set.add(clean);
-    // Also add first 40 chars as a partial key for multi-line text items
-    if (clean.length > 40) set.add(clean.slice(0, 40));
-  }
-  return set;
-}
-
 /**
  * Custom PDF.js text renderer.
- * Wraps text items that appear in our matched-sentence set with <mark>.
- * HTML-escapes all content to prevent XSS from PDF text content.
+ * Wraps exact block matches in a red alert mark, and semantic word overlaps in a subtle orange mark.
  */
-function makeTextRenderer(matchedSet) {
+function makeTextRenderer(highlightData) {
+  const { exactBlocks, highlightWords } = highlightData;
   return (textItem) => {
     const raw = textItem.str || '';
     if (!raw || raw.trim().length < 4) return raw;
@@ -56,14 +39,25 @@ function makeTextRenderer(matchedSet) {
       .replace(/>/g, '&gt;');
 
     const lower = raw.toLowerCase().trim();
-    const isMatched =
-      matchedSet.has(lower) ||
-      // Check if any stored sentence contains this text item (for short fragments)
-      (lower.length >= 8 && [...matchedSet].some((s) => s.includes(lower)));
-
-    if (isMatched) {
-      return `<mark style="background:rgba(245,158,11,0.35);color:inherit;border-radius:2px;padding:0 1px;">${escaped}</mark>`;
+    
+    // Check if the text matches an exact duplicated block
+    const isExact = exactBlocks.has(lower) || 
+      (lower.length >= 20 && [...exactBlocks].some(b => b.includes(lower)));
+      
+    if (isExact) {
+      return `<mark style="background:rgba(239, 68, 68, 0.4);color:inherit;border-radius:2px;padding:0 2px;box-shadow: 0 0 8px rgba(239, 68, 68, 0.3);">${escaped}</mark>`;
     }
+
+    // Semantic word-by-word highlight (highlight individual intersecting keywords)
+    if (highlightWords.size > 0) {
+      return escaped.replace(/\b([a-z0-9]+)\b/gi, (match, word) => {
+        if (highlightWords.has(word.toLowerCase())) {
+          return `<mark style="background:rgba(245, 158, 11, 0.35);color:inherit;border-radius:2px;padding:0 1px;">${match}</mark>`;
+        }
+        return match;
+      });
+    }
+
     return escaped;
   };
 }
@@ -179,12 +173,12 @@ export default function CompareViewer() {
     load();
   }, [checkId, matchedProposalId]);
 
-  // ── Text renderer (memoised on matchedSentences) ────────────────────────
-  const matchedSet = matchData
-    ? buildMatchedTextSet(matchData.matched_sentences)
-    : new Set();
+  // ── Text renderer (memoised on matched paragraphs) ──────────────────────
+  const highlightData = matchData
+    ? buildHighlightData(matchData.matched_paragraphs || [])
+    : { exactBlocks: new Set(), highlightWords: new Set() };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  const textRenderer = useCallback(makeTextRenderer(matchedSet), [matchData]);
+  const textRenderer = useCallback(makeTextRenderer(highlightData), [matchData]);
 
   // ── Scroll sync handlers ────────────────────────────────────────────────
   const activePanel = useRef(null);
@@ -246,13 +240,11 @@ export default function CompareViewer() {
 
   // ── Jump-to handler (from ParagraphBreakdown) ───────────────────────────
   const handleJumpTo = useCallback((_sourceIdx, _targetIdx) => {
-    // Scroll both panels to the approximate vertical position of the sentence.
-    // Without a full PDF text-layer position map, we use a proportional scroll
-    // based on sentence index over total sentences — good enough for navigation.
-    const sents = matchData?.matched_sentences ?? [];
-    if (!sents.length) return;
-    const totalSents = sents.length;
-    const frac = _sourceIdx / Math.max(totalSents, 1);
+    // Scroll both panels to the approximate vertical position of the paragraph.
+    const paras = matchData?.matched_paragraphs ?? [];
+    if (!paras.length) return;
+    const totalParas = paras.length;
+    const frac = _sourceIdx / Math.max(totalParas, 1);
 
     [sourceScrollRef, targetScrollRef].forEach((ref) => {
       if (ref.current) {
@@ -550,9 +542,9 @@ export default function CompareViewer() {
               </div>
             )}
 
-            {/* Matched sentence breakdown */}
+            {/* Matched paragraph breakdown */}
             <ParagraphBreakdown
-              matchedSentences={matchData.matched_sentences ?? []}
+              matchedParagraphs={matchData.matched_paragraphs ?? []}
               onJumpTo={handleJumpTo}
             />
 

@@ -1,25 +1,25 @@
 @import "tailwindcss";
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
-/* ===== DARK THEME (default) ===== */
+/* ===== DARK THEME (default) - Premium Upgraded ===== */
 :root {
-  --color-base: #080a14;
-  --color-surface: #0e1020;
-  --color-surface-2: #141628;
-  --color-surface-3: #1a1d32;
-  --color-surface-4: #20243e;
-  --color-border: #252840;
-  --color-border-soft: #1c1f38;
+  --color-base: #03040b;
+  --color-surface: #0a0c16;
+  --color-surface-2: #111322;
+  --color-surface-3: #181a30;
+  --color-surface-4: #212440;
+  --color-border: #232742;
+  --color-border-soft: #181a30;
 
-  --color-text-primary: #eef0f8;
-  --color-text-muted: #8890b0;
-  --color-text-faint: #4e5470;
+  --color-text-primary: #f8fafc;
+  --color-text-muted: #94a3b8;
+  --color-text-faint: #475569;
 
-  --color-accent-from: #7c3aed;
-  --color-accent-to: #c026d3;
-  --color-accent: #8b5cf6;
-  --color-accent-soft: rgba(139, 92, 246, 0.12);
-  --color-accent-hover: rgba(139, 92, 246, 0.2);
+  --color-accent-from: #6366f1;
+  --color-accent-to: #a855f7;
+  --color-accent: #818cf8;
+  --color-accent-soft: rgba(99, 102, 241, 0.15);
+  --color-accent-hover: rgba(99, 102, 241, 0.25);
 
   --color-success: #10b981;
   --color-success-soft: rgba(16, 185, 129, 0.12);
@@ -38,13 +38,13 @@
   --color-pdfstar: #10b981;
   --color-pdfstar-soft: rgba(16, 185, 129, 0.12);
 
-  --shadow-sm: 0 1px 3px rgba(0,0,0,0.4);
-  --shadow-md: 0 4px 12px rgba(0,0,0,0.4);
-  --shadow-lg: 0 10px 40px rgba(0,0,0,0.5);
-  --shadow-glow: 0 0 30px rgba(139, 92, 246, 0.15);
+  --shadow-sm: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -4px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5);
+  --shadow-glow: 0 0 25px rgba(99, 102, 241, 0.2), inset 0 0 15px rgba(99, 102, 241, 0.1);
 
   --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
-  --radius: 0.875rem;
+  --radius: 1rem;
 }
 
 /* ===== LIGHT THEME ===== */
@@ -167,14 +167,16 @@ html, body, #root {
 
 /* ===== GLASS EFFECT ===== */
 .glass {
-  background: rgba(255,255,255,0.03);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255,255,255,0.06);
+  background: rgba(10, 12, 22, 0.65);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
 }
 html.light .glass {
-  background: rgba(255,255,255,0.7);
-  border: 1px solid rgba(0,0,0,0.06);
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
 }
 
 /* ===== CARD ===== */
@@ -183,14 +185,24 @@ html.light .glass {
   border: 1px solid var(--color-border-soft);
   border-radius: var(--radius);
   box-shadow: var(--shadow-sm);
-  transition: box-shadow 0.2s ease, transform 0.2s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+.card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.06), transparent);
 }
 .card:hover {
   box-shadow: var(--shadow-md);
+  border-color: var(--color-border);
 }
 .card-hover:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
+  transform: translateY(-4px) scale(1.01);
+  box-shadow: var(--shadow-lg);
 }
 
 /* ===== INPUT ===== */

@@ -1,31 +1,32 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { ChevronDown, ChevronUp, AlertTriangle, CheckCircle2, ArrowRight } from 'lucide-react';
+import { getIntersectingWords, wrapIntersectingWords } from '../utils/textHighlighting';
 
 /**
  * ParagraphBreakdown
- * Displays a scrollable list of matched sentences from the text diff.
+ * Displays a scrollable list of matched paragraphs from the semantic diff.
  *
  * Props:
- *   matchedSentences  – array of { source_index, target_index, text, similarity_ratio }
+ *   matchedParagraphs  – array of { source_idx, target_idx, source_text, target_text, similarity }
  *   onJumpTo          – (sourceIndex, targetIndex) => void  — called when user clicks a row
  */
-export default function ParagraphBreakdown({ matchedSentences = [], onJumpTo }) {
+export default function ParagraphBreakdown({ matchedParagraphs = [], onJumpTo }) {
   const [expanded, setExpanded] = useState(true);
   const [filter, setFilter] = useState('all'); // 'all' | 'exact' | 'near'
 
-  const filtered = matchedSentences.filter((s) => {
-    if (filter === 'exact') return s.similarity_ratio >= 1.0;
-    if (filter === 'near')  return s.similarity_ratio < 1.0;
+  const filtered = matchedParagraphs.filter((p) => {
+    if (filter === 'exact') return p.similarity >= 95.0;
+    if (filter === 'near')  return p.similarity < 95.0;
     return true;
   });
 
-  const exactCount = matchedSentences.filter((s) => s.similarity_ratio >= 1.0).length;
-  const nearCount  = matchedSentences.filter((s) => s.similarity_ratio <  1.0).length;
+  const exactCount = matchedParagraphs.filter((p) => p.similarity >= 95.0).length;
+  const nearCount  = matchedParagraphs.filter((p) => p.similarity <  95.0).length;
 
-  function getRatioStyle(ratio) {
-    if (ratio >= 1.0) return { color: 'var(--color-danger)', bg: 'var(--color-danger-soft)', label: 'Exact' };
-    if (ratio >= 0.90) return { color: 'var(--color-warning)', bg: 'var(--color-warning-soft)', label: `${Math.round(ratio * 100)}%` };
-    return { color: 'var(--color-info)', bg: 'var(--color-info-soft)', label: `${Math.round(ratio * 100)}%` };
+  function getRatioStyle(similarity) {
+    if (similarity >= 95.0) return { color: 'var(--color-danger)', bg: 'var(--color-danger-soft)', label: 'Exact' };
+    if (similarity >= 85.0) return { color: 'var(--color-warning)', bg: 'var(--color-warning-soft)', label: `${Math.round(similarity)}%` };
+    return { color: 'var(--color-info)', bg: 'var(--color-info-soft)', label: `${Math.round(similarity)}%` };
   }
 
   return (
@@ -45,13 +46,13 @@ export default function ParagraphBreakdown({ matchedSentences = [], onJumpTo }) 
       >
         <div className="flex items-center gap-2">
           <span className="text-sm font-bold" style={{ color: 'var(--color-text-primary)' }}>
-            Matched Sentences
+            Matched Sections
           </span>
           <span
             className="text-xs font-semibold px-2 py-0.5 rounded-full"
             style={{ background: 'var(--color-accent-soft)', color: 'var(--color-accent)' }}
           >
-            {matchedSentences.length}
+            {matchedParagraphs.length}
           </span>
           {exactCount > 0 && (
             <span
@@ -78,13 +79,13 @@ export default function ParagraphBreakdown({ matchedSentences = [], onJumpTo }) 
       {expanded && (
         <>
           {/* Filter tabs */}
-          {matchedSentences.length > 0 && (
+          {matchedParagraphs.length > 0 && (
             <div
               className="flex gap-1 px-3 py-2"
               style={{ borderBottom: '1px solid var(--color-border-soft)', background: 'var(--color-surface-2)' }}
             >
               {[
-                { key: 'all',   label: `All (${matchedSentences.length})` },
+                { key: 'all',   label: `All (${matchedParagraphs.length})` },
                 { key: 'exact', label: `Exact (${exactCount})` },
                 { key: 'near',  label: `Near (${nearCount})` },
               ].map(({ key, label }) => (
@@ -114,14 +115,18 @@ export default function ParagraphBreakdown({ matchedSentences = [], onJumpTo }) 
                 </span>
               </div>
             ) : (
-              filtered.map((sentence, idx) => {
-                const { color, bg, label } = getRatioStyle(sentence.similarity_ratio);
-                const isExact = sentence.similarity_ratio >= 1.0;
+              filtered.map((paragraph, idx) => {
+                const { color, bg, label } = getRatioStyle(paragraph.similarity);
+                const isExact = paragraph.similarity >= 95.0;
+                
+                // Highlight overlapping words in the UI
+                const words = isExact ? new Set() : getIntersectingWords(paragraph.source_text, paragraph.target_text);
+                const highlightedHtml = isExact ? paragraph.source_text : wrapIntersectingWords(paragraph.source_text, words);
 
                 return (
                   <button
                     key={idx}
-                    onClick={() => onJumpTo?.(sentence.source_index, sentence.target_index)}
+                    onClick={() => onJumpTo?.(paragraph.source_idx, paragraph.target_idx)}
                     className="w-full text-left px-4 py-3 transition-all duration-150 group"
                     style={{
                       borderBottom: '1px solid var(--color-border-soft)',
@@ -143,7 +148,7 @@ export default function ParagraphBreakdown({ matchedSentences = [], onJumpTo }) 
                           {label}
                         </span>
                         <span className="text-[10px]" style={{ color: 'var(--color-text-faint)' }}>
-                          §{sentence.source_index + 1} <ArrowRight size={8} className="inline" /> §{sentence.target_index + 1}
+                          §{paragraph.source_idx + 1} <ArrowRight size={8} className="inline" /> §{paragraph.target_idx + 1}
                         </span>
                       </div>
                       <span
@@ -154,11 +159,10 @@ export default function ParagraphBreakdown({ matchedSentences = [], onJumpTo }) 
                       </span>
                     </div>
                     <p
-                      className="text-xs leading-relaxed line-clamp-2"
+                      className="text-xs leading-relaxed line-clamp-3"
                       style={{ color: 'var(--color-text-muted)' }}
-                    >
-                      {sentence.text}
-                    </p>
+                      dangerouslySetInnerHTML={{ __html: highlightedHtml }}
+                    />
                   </button>
                 );
               })

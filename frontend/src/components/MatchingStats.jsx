@@ -20,7 +20,6 @@ export default function MatchingStats({
   matched_paragraphs = [],
 }) {
   const wordPct = total_words > 0 ? Math.round((matched_words / total_words) * 100) : 0;
-  const sentCount = Array.isArray(matched_sentences) ? matched_sentences.length : 0;
   const paraCount = Array.isArray(matched_paragraphs) ? matched_paragraphs.length : 0;
 
   const getOverallStyle = () => {
@@ -77,8 +76,7 @@ export default function MatchingStats({
       >
         {[
           { label: 'Words Matched', value: total_words > 0 ? `${matched_words} / ${total_words}` : '—', sub: total_words > 0 ? `${wordPct}%` : '' },
-          { label: 'Sentences',    value: sentCount,  sub: sentCount === 1 ? 'match' : 'matches' },
-          { label: 'Paragraphs',   value: paraCount,  sub: paraCount === 1 ? 'match' : 'matches' },
+          { label: 'Matched Sections', value: paraCount,  sub: paraCount === 1 ? 'section' : 'sections' },
           { label: 'Word Coverage',value: `${wordPct}%`, sub: 'of source' },
         ].map(({ label, value, sub }) => (
           <div

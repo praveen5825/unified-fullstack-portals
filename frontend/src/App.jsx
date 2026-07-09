@@ -18,7 +18,7 @@ import EditProposal from './pages/EditProposal';
 export default function App() {
   return (
     <ThemeProvider>
-      <BrowserRouter>
+      <BrowserRouter basename="/p3">
         <AuthProvider>
           <Routes>
             <Route path="/login" element={<Login />} />

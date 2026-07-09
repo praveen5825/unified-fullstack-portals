@@ -25,7 +25,17 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
-
+ALLOWED_HOSTS = [
+    "localhost",
+    "127.0.0.1",
+    "desktop-4ji2vq2.tailafdbde.ts.net",
+]
+CSRF_TRUSTED_ORIGINS = [
+    "https://desktop-4ji2vq2.tailafdbde.ts.net",
+]
+CORS_ALLOWED_ORIGINS = [
+    "https://desktop-4ji2vq2.tailafdbde.ts.net",
+]
 # Application definition
 
 INSTALLED_APPS = [
@@ -161,8 +171,8 @@ SIMPLE_JWT = {
 
 # --- RELEVANT ADDITIONS: CORS (React + Vite dev server) ---
 CORS_ALLOWED_ORIGINS = [
-    'http://localhost:5173',
-    'http://127.0.0.1:5173',
+    'http://localhost:5174',
+    'http://127.0.0.1:5174',
 ]
 
 # --- RELEVANT ADDITIONS: Celery ---

@@ -296,23 +296,37 @@ def compare_documents(request, matched_proposal_id):
     if not doc_sim:
         return Response({'detail': 'Comparison result not found for this check_id'}, status=status.HTTP_404_NOT_FOUND)
         
-    # paragraph_scores is not stored in the model (computed on-demand each call);
-    # we keep it in a local variable so both the lazy-compute and already-cached
-    # branches can include it in the response.
+    # paragraph_scores is always re-computed on-demand from the saved .txt file so that:
+    #   1. paragraph_scores is never empty (it is not stored in the model).
+    #   2. source_text/target_text fields are always present for highlighting.
     paragraph_scores = []
 
-    # Check if we already did paragraph diff caching
-    if not doc_sim.matched_sentences and doc_sim.total_words == 0:
-        txt_path = os.path.join(settings.MEDIA_ROOT, 'synopsis_checks', f"{check_id}.txt")
-        if os.path.exists(txt_path):
-            with open(txt_path, 'r', encoding='utf-8') as f:
-                source_text = f.read()
+    txt_path = os.path.join(settings.MEDIA_ROOT, 'synopsis_checks', f"{check_id}.txt")
+    if os.path.exists(txt_path):
+        with open(txt_path, 'r', encoding='utf-8') as f:
+            source_text = f.read()
+
+        # Re-run diff if:
+        #  a) sentences not yet cached, or
+        #  b) cached paragraphs lack the new source_text/target_text keys (old format).
+        cached_paras = doc_sim.matched_paragraphs or []
+        needs_refresh = (
+            not doc_sim.matched_sentences
+            or doc_sim.total_words == 0
+            or (cached_paras and 'source_text' not in cached_paras[0])
+        )
+
+        if needs_refresh:
             diff_res = compute_text_diff(source_text, matched_prop.extracted_text)
             doc_sim.matched_paragraphs = diff_res['matched_paragraphs']
             doc_sim.matched_sentences = diff_res['matched_sentences']
             doc_sim.matched_words = diff_res['matched_words']
             doc_sim.total_words = diff_res['total_words']
             doc_sim.save()
+            paragraph_scores = diff_res.get('paragraph_scores', [])
+        else:
+            # Re-compute paragraph_scores without persisting (not stored in model)
+            diff_res = compute_text_diff(source_text, matched_prop.extracted_text)
             paragraph_scores = diff_res.get('paragraph_scores', [])
 
     return Response({

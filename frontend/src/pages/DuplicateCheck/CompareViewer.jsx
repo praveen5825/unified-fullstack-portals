@@ -26,6 +26,14 @@ const SCALE_STEP = 0.15;
 /**
  * Custom PDF.js text renderer.
  * Wraps exact block matches in a red alert mark, and semantic word overlaps in a subtle orange mark.
+ *
+ * Strategy:
+ *  - exactBlocks now contains both full paragraph text AND sliding-window sub-fragments
+ *    (6–20 words long) built by buildHighlightData.  We check whether the PDF text
+ *    layer item (normalised) is itself one of those fragments, OR whether it contains
+ *    a fragment that is at least half its own length — giving us solid coverage even
+ *    when the PDF text layer splits paragraphs across many small items.
+ *  - highlightWords: wrap every individual matching keyword in orange.
  */
 function makeTextRenderer(highlightData) {
   const { exactBlocks, highlightWords } = highlightData;
@@ -39,18 +47,39 @@ function makeTextRenderer(highlightData) {
       .replace(/>/g, '&gt;');
 
     const lower = raw.toLowerCase().trim();
-    
-    // Check if the text matches an exact duplicated block
-    const isExact = exactBlocks.has(lower) || 
-      (lower.length >= 20 && [...exactBlocks].some(b => b.includes(lower)));
-      
+    const lowerNorm = lower.replace(/\s+/g, ' ');
+
+    // ── Exact / near-exact block highlight (red) ────────────────────────────
+    // 1. Direct full match (the item IS one of the stored fragments)
+    let isExact = exactBlocks.has(lowerNorm);
+
+    // 2. The item contains a stored fragment (fragment is a substring of the item)
+    if (!isExact && lowerNorm.length >= 20) {
+      for (const frag of exactBlocks) {
+        if (frag.length >= 15 && lowerNorm.includes(frag)) {
+          isExact = true;
+          break;
+        }
+      }
+    }
+
+    // 3. A stored fragment contains this item (item is a substring of a paragraph)
+    if (!isExact && lowerNorm.length >= 12) {
+      for (const frag of exactBlocks) {
+        if (frag.length >= lowerNorm.length && frag.includes(lowerNorm)) {
+          isExact = true;
+          break;
+        }
+      }
+    }
+
     if (isExact) {
       return `<mark style="background:rgba(239, 68, 68, 0.4);color:inherit;border-radius:2px;padding:0 2px;box-shadow: 0 0 8px rgba(239, 68, 68, 0.3);">${escaped}</mark>`;
     }
 
-    // Semantic word-by-word highlight (highlight individual intersecting keywords)
+    // ── Semantic word-by-word highlight (orange) ────────────────────────────
     if (highlightWords.size > 0) {
-      return escaped.replace(/\b([a-z0-9]+)\b/gi, (match, word) => {
+      return escaped.replace(/\b([a-zA-Z][a-z0-9]*)\b/g, (match, word) => {
         if (highlightWords.has(word.toLowerCase())) {
           return `<mark style="background:rgba(245, 158, 11, 0.35);color:inherit;border-radius:2px;padding:0 1px;">${match}</mark>`;
         }

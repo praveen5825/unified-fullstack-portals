@@ -88,6 +88,8 @@ def compute_text_diff(source_text: str, target_text: str) -> dict:
                 matched_paragraphs.append({
                     'source_index': i,
                     'target_index': j1 + offset,
+                    'source_text': source_paras[i],
+                    'target_text': target_paras[j1 + offset],
                     'text': source_paras[i],
                     'similarity_ratio': 1.0,
                 })
@@ -105,6 +107,8 @@ def compute_text_diff(source_text: str, target_text: str) -> dict:
                     matched_paragraphs.append({
                         'source_index': i,
                         'target_index': best_j,
+                        'source_text': source_paras[i],
+                        'target_text': target_paras[best_j],
                         'text': source_paras[i],
                         'similarity_ratio': round(best_ratio, 3),
                     })
@@ -134,6 +138,8 @@ def compute_text_diff(source_text: str, target_text: str) -> dict:
                 matched_sentences.append({
                     'source_index': i,
                     'target_index': j1 + offset,
+                    'source_text': sent,
+                    'target_text': target_sents[j1 + offset],
                     'text': sent,
                     'similarity_ratio': 1.0,
                 })
@@ -155,6 +161,8 @@ def compute_text_diff(source_text: str, target_text: str) -> dict:
                     matched_sentences.append({
                         'source_index': i,
                         'target_index': best_j,
+                        'source_text': sent,
+                        'target_text': target_sents[best_j],
                         'text': sent,
                         'similarity_ratio': round(best_ratio, 3),
                     })

@@ -53,27 +53,43 @@ export function getIntersectingWords(text1, text2) {
  * Builds highlight data structures for the CompareViewer given the matched_paragraphs array.
  * Returns:
  * {
- *   exactBlocks: Set of lowercase full text blocks for exact matches (similarity >= 95)
+ *   exactBlocks: Set of lowercase full text blocks for exact matches (similarity_ratio >= 0.95)
  *   highlightWords: Set of specific intersecting words for partial semantic matches
  * }
+ *
+ * Field name notes (backend `text_diff.py` returns):
+ *   similarity_ratio  – float 0–1  (NOT "similarity", NOT 0–100)
+ *   source_text       – text of the source paragraph (new format)
+ *   target_text       – text of the matched paragraph (new format)
+ *   text              – legacy alias for source_text (kept for backward compat)
  */
 export function buildHighlightData(matchedParagraphs = []) {
   const exactBlocks = new Set();
   const highlightWords = new Set();
 
   for (const p of matchedParagraphs) {
-    if (!p.source_text || !p.target_text) continue;
+    // Support both new field names and the legacy `text` field
+    const sourceText = p.source_text || p.text || '';
+    const targetText = p.target_text || p.text || '';
+    if (!sourceText) continue;
 
-    // 95% or higher is considered a near-exact match, highlight the entire block
-    if (p.similarity >= 95) {
-      exactBlocks.add(p.source_text.toLowerCase().trim());
-      // Add first 40 chars as fragment key for multi-line text layer items
-      if (p.source_text.length > 40) {
-        exactBlocks.add(p.source_text.substring(0, 40).toLowerCase().trim());
+    // similarity_ratio is a 0–1 float; >= 0.95 is considered near-exact
+    const ratio = p.similarity_ratio ?? (p.similarity != null ? p.similarity / 100 : 0);
+
+    if (ratio >= 0.95) {
+      const lower = sourceText.toLowerCase().trim();
+      exactBlocks.add(lower);
+      // Add sub-fragments so multi-line PDF text layer items are matched
+      const words = lower.split(/\s+/);
+      // Add every window of 6+ consecutive words as an exact block fragment
+      for (let start = 0; start < words.length - 5; start++) {
+        for (let len = 6; len <= Math.min(20, words.length - start); len++) {
+          exactBlocks.add(words.slice(start, start + len).join(' '));
+        }
       }
     } else {
-      // It's a semantic match/paraphrase. Extract and highlight only the common vocabulary.
-      const common = getIntersectingWords(p.source_text, p.target_text);
+      // Semantic/paraphrase match — highlight only the common significant vocabulary
+      const common = getIntersectingWords(sourceText, targetText);
       for (const w of common) {
         highlightWords.add(w);
       }

@@ -9,6 +9,7 @@ import NewProposal from './pages/NewProposal';
 import DuplicateCheck from './pages/DuplicateCheck';
 import CompareViewer from './pages/DuplicateCheck/CompareViewer';
 import Placeholder from './pages/Placeholder';
+import BulkImport from './pages/BulkImport';
 import Spark from './pages/Spark';
 import Pdfstar from './pages/Pdfstar';
 import Pgstar from './pages/Pgstar';
@@ -33,7 +34,7 @@ export default function App() {
             >
               <Route index element={<Dashboard />} />
               <Route path="proposals/new" element={<NewProposal />} />
-              <Route path="bulk-import" element={<Placeholder title="Bulk Import" subtitle="Import proposals from Excel" />} />
+              <Route path="bulk-import" element={<BulkImport />} />
               <Route path="duplicate-check" element={<DuplicateCheck />} />
               <Route path="duplicate-check/compare/:checkId/:matchedProposalId" element={<CompareViewer />} />
               <Route path="spark" element={<Spark />} />

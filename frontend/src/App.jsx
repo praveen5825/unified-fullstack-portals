@@ -14,6 +14,8 @@ import Pdfstar from './pages/Pdfstar';
 import Pgstar from './pages/Pgstar';
 import ProposalDetail from './pages/ProposalDetail';
 import EditProposal from './pages/EditProposal';
+import Analytics from './pages/Analytics';
+import GlobalSearch from './pages/GlobalSearch';
 
 export default function App() {
   return (
@@ -39,6 +41,9 @@ export default function App() {
               <Route path="pgstar" element={<Pgstar />} />
               <Route path="proposals/:id" element={<ProposalDetail />} />
               <Route path="proposals/:id/edit" element={<EditProposal />} />
+              {/* ── New Features ─────────────────────────────────────── */}
+              <Route path="analytics" element={<Analytics />} />
+              <Route path="search" element={<GlobalSearch />} />
             </Route>
           </Routes>
         </AuthProvider>

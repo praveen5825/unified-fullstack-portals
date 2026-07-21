@@ -54,3 +54,29 @@ export const duplicateCheckApi = {
   updateReviewStatus: (id, review_status) =>
     client.patch(`${BASE}/review/${id}/status/`, { review_status }),
 };
+
+// ── Analytics API ─────────────────────────────────────────────────────────────
+export const analyticsApi = {
+  overview:       (params) => client.get(`${BASE}/analytics/overview/`, { params }),
+  yearly:         (params) => client.get(`${BASE}/analytics/yearly/`, { params }),
+  statewise:      (params) => client.get(`${BASE}/analytics/statewise/`, { params }),
+  researchArea:   (params) => client.get(`${BASE}/analytics/research-area/`, { params }),
+  session:        (params) => client.get(`${BASE}/analytics/session/`, { params }),
+  duplicateStats: (params) => client.get(`${BASE}/analytics/duplicate-stats/`, { params }),
+};
+
+// ── Search API ────────────────────────────────────────────────────────────────
+export const searchApi = {
+  /**
+   * Simple full-text search across all proposals.
+   * GET /api/duplicate-check/search/?q=…&scheme=…&status=…&year=…&page=1
+   */
+  globalSearch: (params) => client.get(`${BASE}/search/`, { params }),
+
+  /**
+   * Boolean search — POST with { query, search_in, scheme, status, year, page }
+   * query supports: AND  OR  NOT  "phrase"
+   * search_in: "title" | "synopsis" | "both"
+   */
+  booleanSearch: (body) => client.post(`${BASE}/boolean-search/`, body),
+};

@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.postgres.indexes import GinIndex
+from django.contrib.postgres.search import SearchVectorField
 
 
 class Scheme(models.TextChoices):
@@ -59,6 +60,11 @@ class ResearchProposal(models.Model):
         max_length=20, choices=ReviewStatus.choices, default=ReviewStatus.UNREVIEWED, db_index=True
     )
 
+    # ── Full-Text Search (Boolean Search) ──────────────────────────────────
+    # Auto-updated by signals.py whenever title or extracted_text changes.
+    # GIN index makes boolean queries (AND/OR/NOT/phrase) sub-millisecond.
+    search_vector = SearchVectorField(null=True, blank=True)
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -70,6 +76,8 @@ class ResearchProposal(models.Model):
             models.Index(fields=['session']),
             GinIndex(fields=['title'], name='title_trgm_idx', opclasses=['gin_trgm_ops']),
             GinIndex(fields=['student_name'], name='student_trgm_idx', opclasses=['gin_trgm_ops']),
+            # Boolean / full-text search index
+            GinIndex(fields=['search_vector'], name='proposal_search_vector_idx'),
         ]
         # Removed unique constraint to allow duplicate spark_id + scheme combinations
         ordering = ['-created_at']

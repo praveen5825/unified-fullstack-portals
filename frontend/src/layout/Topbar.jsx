@@ -1,10 +1,37 @@
-import { Search, Bell, RefreshCw, Sun, Moon, LogOut } from 'lucide-react';
+import { Search, Bell, RefreshCw, Sun, Moon } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
+import { useNavigate } from 'react-router-dom';
+import { useState, useEffect, useRef } from 'react';
 
 export default function Topbar({ title, subtitle, onRefresh }) {
-  const { logout } = useAuth();
-  const { theme, toggleTheme, isDark } = useTheme();
+  const { userProfile } = useAuth();
+  const { toggleTheme, isDark } = useTheme();
+  const navigate = useNavigate();
+  const [searchVal, setSearchVal] = useState('');
+  const searchRef = useRef(null);
+
+  // Ctrl+K / Cmd+K shortcut to focus search from anywhere
+  useEffect(() => {
+    const handler = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault();
+        searchRef.current?.focus();
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, []);
+
+  const handleSearch = (e) => {
+    if (e.key === 'Enter' && searchVal.trim()) {
+      navigate(`/search?q=${encodeURIComponent(searchVal.trim())}`);
+      setSearchVal('');
+    }
+  };
+
+  const initials = userProfile?.initials || 'U';
+  const displayName = userProfile?.displayName || 'User';
 
   return (
     <div className="flex items-center justify-between gap-4 mb-8">
@@ -40,9 +67,13 @@ export default function Topbar({ title, subtitle, onRefresh }) {
         >
           <Search size={14} style={{ color: 'var(--color-text-faint)', flexShrink: 0 }} />
           <input
-            placeholder="Search proposals..."
+            ref={searchRef}
+            placeholder="Search proposals…  (Ctrl+K)"
             className="bg-transparent text-sm outline-none w-full"
             style={{ color: 'var(--color-text-primary)' }}
+            value={searchVal}
+            onChange={(e) => setSearchVal(e.target.value)}
+            onKeyDown={handleSearch}
           />
         </div>
 
@@ -108,9 +139,9 @@ export default function Topbar({ title, subtitle, onRefresh }) {
         <div
           className="accent-gradient w-9 h-9 rounded-xl flex items-center justify-center text-xs font-bold text-white cursor-pointer select-none"
           style={{ boxShadow: '0 2px 8px rgba(139, 92, 246, 0.3)' }}
-          title="Admin account"
+          title={displayName}
         >
-          AD
+          {initials}
         </div>
       </div>
     </div>

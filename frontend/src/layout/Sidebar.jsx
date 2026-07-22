@@ -1,9 +1,9 @@
-import { NavLink, useLocation } from 'react-router-dom';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import {
   LayoutGrid, FilePlus2, UploadCloud, ScanSearch,
   FileText, BookOpen, GraduationCap, Sparkles,
-  ChevronLeft, ChevronRight, User,
+  ChevronLeft, ChevronRight, BarChart3, Search,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
@@ -33,14 +33,21 @@ const MENU_GROUPS = [
     label: 'TOOLS',
     items: [
       { to: '/duplicate-check', label: 'Duplicate Check', icon: ScanSearch, color: '#f472b6', soft: 'rgba(244, 114, 182, 0.12)' },
+      { to: '/analytics', label: 'Analytics', icon: BarChart3, color: '#34d399', soft: 'rgba(52, 211, 153, 0.12)' },
+      { to: '/search', label: 'Global Search', icon: Search, color: '#60a5fa', soft: 'rgba(96, 165, 250, 0.12)' },
     ],
   },
 ];
 
 export default function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
-  const { user, logout } = useAuth();
+  const { userProfile, logout } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
+
+  const initials = userProfile?.initials || 'U';
+  const displayName = userProfile?.displayName || 'User';
+  const role = userProfile?.is_staff ? 'Administrator' : 'Reviewer';
 
   return (
     <aside
@@ -172,15 +179,16 @@ export default function Sidebar() {
           style={{ background: 'var(--color-surface-2)' }}
         >
           <div
-            className="accent-gradient shrink-0 flex items-center justify-center rounded-lg text-xs font-bold text-white"
+            className="accent-gradient shrink-0 flex items-center justify-center rounded-lg text-xs font-bold text-white cursor-pointer select-none"
             style={{ width: 30, height: 30 }}
+            title={displayName}
           >
-            AD
+            {initials}
           </div>
           {!collapsed && (
             <div className="flex-1 min-w-0 animate-fade-in">
-              <div className="text-xs font-semibold truncate" style={{ color: 'var(--color-text-primary)' }}>Admin</div>
-              <div className="text-[10px] truncate" style={{ color: 'var(--color-text-faint)' }}>administrator</div>
+              <div className="text-xs font-semibold truncate" style={{ color: 'var(--color-text-primary)' }}>{displayName}</div>
+              <div className="text-[10px] truncate" style={{ color: 'var(--color-text-faint)' }}>{role}</div>
             </div>
           )}
           {!collapsed && (

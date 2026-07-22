@@ -14,6 +14,9 @@ export const proposalsApi = {
       headers: { 'Content-Type': 'multipart/form-data' },
     }),
   delete: (id) => client.delete(`${BASE}/proposals/${id}/`),
+  bulkImport: (scheme, formData) => client.post(`${BASE}/proposals/bulk-import/?scheme=${scheme}`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  }),
 };
 
 export const duplicateCheckApi = {
@@ -53,4 +56,35 @@ export const duplicateCheckApi = {
   reviewResults: () => client.get(`${BASE}/review/`),
   updateReviewStatus: (id, review_status) =>
     client.patch(`${BASE}/review/${id}/status/`, { review_status }),
+};
+
+// ── Analytics API ─────────────────────────────────────────────────────────────
+export const analyticsApi = {
+  overview:       (params) => client.get(`${BASE}/analytics/overview/`, { params }),
+  yearly:         (params) => client.get(`${BASE}/analytics/yearly/`, { params }),
+  statewise:      (params) => client.get(`${BASE}/analytics/statewise/`, { params }),
+  researchArea:   (params) => client.get(`${BASE}/analytics/research-area/`, { params }),
+  session:        (params) => client.get(`${BASE}/analytics/session/`, { params }),
+  duplicateStats: (params) => client.get(`${BASE}/analytics/duplicate-stats/`, { params }),
+};
+
+// ── Search API ────────────────────────────────────────────────────────────────
+export const searchApi = {
+  /**
+   * Simple full-text search across all proposals.
+   * GET /api/duplicate-check/search/
+   *   ?q=…&search_in=both|title|synopsis&scheme=…&status=…&year=…&page=1
+   *
+   * search_in: "both" (default) | "title" | "synopsis"
+   * Returns ranked results using PostgreSQL FTS with icontains fallback.
+   */
+  globalSearch: (params) => client.get(`${BASE}/search/`, { params }),
+
+  /**
+   * Boolean search — POST with { query, search_in, scheme, status, year, page }
+   * query supports: AND  OR  NOT  "phrase"
+   * search_in: "title" | "synopsis" | "both"
+   * Cascade: GIN FTS → on-the-fly FTS → icontains fallback (guaranteed results)
+   */
+  booleanSearch: (body) => client.post(`${BASE}/boolean-search/`, body),
 };

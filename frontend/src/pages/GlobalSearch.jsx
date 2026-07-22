@@ -2,12 +2,13 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Search, SlidersHorizontal, BookText, FileText, X, ChevronRight,
-  Info, Zap, Tag, ArrowRight, ToggleLeft, ToggleRight, Loader2,
+  Info, Zap, Tag, ArrowRight, ToggleLeft, ToggleRight, Loader2, Download
 } from 'lucide-react';
 import Topbar from '../layout/Topbar';
 import StatusBadge from '../components/StatusBadge';
 import SchemeTag from '../components/SchemeTag';
 import { searchApi } from '../api/duplicateCheck';
+import * as XLSX from 'xlsx';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 const SCHEME_OPTS = ['', 'SPARK', 'PG-STAR', 'PDF-STAR'];
@@ -147,6 +148,41 @@ export default function GlobalSearch() {
   const [hasSearched, setHasSearched] = useState(false);
   const [searchType, setSearchType] = useState('');
   const [showFilters, setShowFilters] = useState(false);
+
+  const handleExportExcel = () => {
+    if (!results.length) return;
+    
+    // Format data for Excel
+    const data = results.map(r => ({
+      'Spark ID': r.spark_id || '',
+      'Title': r.title || '',
+      'Scheme': r.scheme || '',
+      'Status': r.status || '',
+      'Session': r.session || '',
+      'Year': r.year || '',
+      'Student Name': r.student_name || '',
+      'Guide Name': r.guide_name || '',
+      'College Name': r.college_name || '',
+      'State': r.state || '',
+      'Research Area': r.research_area || '',
+      'Match Rank (%)': r.rank ? r.rank.toFixed(2) : '',
+      'Matched In': r.matched_in || ''
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Search Results");
+    
+    // Auto-size columns slightly
+    const colWidths = [
+      { wch: 15 }, { wch: 50 }, { wch: 10 }, { wch: 12 }, { wch: 12 },
+      { wch: 10 }, { wch: 20 }, { wch: 20 }, { wch: 30 }, { wch: 15 },
+      { wch: 25 }, { wch: 15 }, { wch: 15 }
+    ];
+    ws['!cols'] = colWidths;
+
+    XLSX.writeFile(wb, `Search_Results_${query || 'All'}.xlsx`);
+  };
 
   // Auto-search if ?q= in URL
   useEffect(() => {
@@ -424,6 +460,17 @@ export default function GlobalSearch() {
                   : <span>No results found for <strong>"{query}"</strong> — try different keywords or operators.</span>
               }
             </div>
+            
+            {!loading && total > 0 && (
+              <button
+                onClick={handleExportExcel}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all hover:scale-105"
+                style={{ background: 'rgba(16, 185, 129, 0.1)', border: '1px solid #10b981', color: '#10b981' }}
+              >
+                <Download size={13} />
+                Export to Excel (Current Page)
+              </button>
+            )}
           </div>
 
           {/* Cards */}

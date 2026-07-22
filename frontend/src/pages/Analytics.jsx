@@ -1,8 +1,11 @@
-import { useEffect, useState, useMemo, useCallback } from 'react';
-import { BarChart3, TrendingUp, MapPin, BookOpen, Calendar, ShieldAlert, RefreshCw } from 'lucide-react';
+import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
+import { BarChart3, TrendingUp, MapPin, BookOpen, Calendar, ShieldAlert, RefreshCw, Download } from 'lucide-react';
 import Topbar from '../layout/Topbar';
 import EChart, { cssVar } from '../components/EChart';
 import { analyticsApi } from '../api/duplicateCheck';
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
+import toast from 'react-hot-toast';
 
 // ── Scheme filter options ────────────────────────────────────────────────────
 const SCHEME_OPTIONS = [
@@ -85,6 +88,30 @@ export default function Analytics() {
   const [researchArea, setResearchArea] = useState([]);
   const [session, setSession] = useState([]);
   const [dupStats, setDupStats] = useState([]);
+  const dashboardRef = useRef(null);
+  const [isExporting, setIsExporting] = useState(false);
+
+  const handleDownloadPdf = async () => {
+    if (!dashboardRef.current) return;
+    setIsExporting(true);
+    const toastId = toast.loading('Generating PDF Report...');
+    try {
+      const canvas = await html2canvas(dashboardRef.current, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+      
+      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+      pdf.save('CCRAS_Analytics_Report.pdf');
+      toast.success('Report downloaded successfully!', { id: toastId });
+    } catch (e) {
+      console.error(e);
+      toast.error('Failed to generate PDF', { id: toastId });
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -257,8 +284,18 @@ export default function Analytics() {
           <RefreshCw size={12} className={loading ? 'animate-spin' : ''} />
           Refresh
         </button>
+        <button
+          onClick={handleDownloadPdf}
+          disabled={isExporting}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs transition-all"
+          style={{ background: 'var(--color-accent)', color: '#fff', opacity: isExporting ? 0.7 : 1 }}
+        >
+          <Download size={12} />
+          {isExporting ? 'Exporting...' : 'Export PDF'}
+        </button>
       </div>
 
+      <div ref={dashboardRef} className="p-4 -mx-4 rounded-xl" style={{ background: 'var(--color-bg)' }}>
       {/* ── KPI Row ────────────────────────────────────────────────────────── */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
         <KpiCard label="Total Proposals"  value={overview?.total}                color="#818cf8" icon={BarChart3} />
@@ -325,6 +362,7 @@ export default function Analytics() {
           }
         </ChartPanel>
 
+      </div>
       </div>
     </div>
   );

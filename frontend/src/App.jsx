@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -21,6 +22,12 @@ import GlobalSearch from './pages/GlobalSearch';
 export default function App() {
   return (
     <ThemeProvider>
+      <Toaster 
+        position="bottom-right" 
+        toastOptions={{ 
+          style: { background: 'var(--color-surface-2)', color: 'var(--color-text-primary)', border: '1px solid var(--color-border)' } 
+        }} 
+      />
       <BrowserRouter basename="/p3">
         <AuthProvider>
           <Routes>

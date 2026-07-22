@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft, Pencil, Trash2, FileText, ExternalLink, Calendar, MapPin, User, GraduationCap, Library, Hash, Loader2, BookOpen, FlaskConical } from 'lucide-react';
+import { confirmAction } from '../utils/confirmToast';
 import { Document, Page, pdfjs } from 'react-pdf';
 import 'react-pdf/dist/Page/TextLayer.css';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
@@ -63,7 +64,8 @@ export default function ProposalDetail() {
   useEffect(() => { load(); }, [id]);
 
   const handleDelete = async () => {
-    if (!window.confirm('Delete this proposal? This cannot be undone.')) return;
+    const confirmed = await confirmAction('Delete this proposal? This cannot be undone.', 'Delete');
+    if (!confirmed) return;
     await proposalsApi.delete(id).catch(() => {});
     navigate(-1);
   };

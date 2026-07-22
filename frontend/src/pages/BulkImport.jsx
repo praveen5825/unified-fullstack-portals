@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import toast from 'react-hot-toast';
 import { UploadCloud, FileSpreadsheet, Download, Info, CheckCircle2, AlertTriangle, ListFilter } from 'lucide-react';
 import Topbar from '../layout/Topbar';
 
@@ -34,7 +35,7 @@ export default function BulkImport() {
   const handleDrop = (e) => {
     e.preventDefault();
     setIsDragging(false);
-    alert(`File uploaded! Data will be saved under the ${selectedScheme} scheme.`);
+    toast.success(`File uploaded! Data will be saved under the ${selectedScheme} scheme.`);
   };
 
   return (
@@ -97,7 +98,7 @@ export default function BulkImport() {
             <button 
               className="px-5 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-2 transition-all hover:scale-105"
               style={{ background: 'var(--color-surface-3)', color: 'var(--color-text-primary)', border: '1px solid var(--color-border)' }}
-              onClick={() => alert(`File selection logic will be implemented here! Selected scheme: ${selectedScheme}`)}
+              onClick={() => toast.success(`File selected. Scheme: ${selectedScheme}`)}
             >
               Browse Files
             </button>

@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import Topbar from '../layout/Topbar';
 import { proposalsApi } from '../api/duplicateCheck';
+import { confirmAction } from '../utils/confirmToast';
 import {
   Eye, Pencil, Trash2, Download, FileSearch, Search, X,
   LayoutGrid, List, Sparkles, MapPin, User, FileText, ChevronRight, BookOpen
@@ -69,7 +70,8 @@ export default function SchemeProposals({ scheme, title, subtitle }) {
   }, [allProposals, activeTab, search]);
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Delete this proposal? This cannot be undone.')) return;
+    const confirmed = await confirmAction('Delete this proposal? This cannot be undone.', 'Delete');
+    if (!confirmed) return;
     await proposalsApi.delete(id).catch(() => {});
     load();
   };

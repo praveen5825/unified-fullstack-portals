@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import Topbar from '../layout/Topbar';
 import { proposalsApi } from '../api/duplicateCheck';
 import { SCHEMES, STATUSES, SESSIONS, RESEARCH_TYPES, INDIAN_STATES, UNION_TERRITORIES } from '../constants/proposals';
@@ -13,7 +14,6 @@ export default function EditProposal() {
   const [newDocument, setNewDocument] = useState(null);
   const [newFinalReport, setNewFinalReport] = useState(null);
   const [submitting, setSubmitting] = useState(false);
-  const [feedback, setFeedback] = useState(null);
 
   useEffect(() => {
     proposalsApi.detail(id).then((res) => {
@@ -30,7 +30,7 @@ export default function EditProposal() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSubmitting(true);
-    setFeedback(null);
+    setSubmitting(true);
     try {
       const data = new FormData();
       Object.entries(form).forEach(([key, val]) => {
@@ -40,10 +40,10 @@ export default function EditProposal() {
       if (newFinalReport) data.append('final_report', newFinalReport);
 
       await proposalsApi.update(id, data);
-      setFeedback({ type: 'success', text: 'Proposal updated.' });
+      toast.success('Proposal updated.');
       setTimeout(() => navigate(`/proposals/${id}`), 800);
     } catch {
-      setFeedback({ type: 'error', text: 'Could not update proposal. Check the fields.' });
+      toast.error('Could not update proposal. Check the fields.');
     } finally {
       setSubmitting(false);
     }
@@ -164,11 +164,7 @@ export default function EditProposal() {
           </div>
         </div>
 
-        {feedback && (
-          <div className={`text-sm rounded-xl px-3.5 py-2.5 mb-4 ${feedback.type === 'success' ? 'bg-success-soft text-success' : 'bg-danger-soft text-danger'}`}>
-            {feedback.text}
-          </div>
-        )}
+        {/* Error/success toast handles feedback */}
 
         <button type="submit" disabled={submitting} className="accent-gradient text-white text-sm font-medium px-5 py-2.5 rounded-xl disabled:opacity-60">
           {submitting ? 'Saving...' : 'Save Changes'}

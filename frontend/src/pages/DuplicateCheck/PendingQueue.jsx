@@ -5,6 +5,7 @@ import StatusBadge from '../../components/StatusBadge';
 import SchemeTag from '../../components/SchemeTag';
 import EmptyState from '../../components/EmptyState';
 import LoadingSkeleton from '../../components/LoadingSkeleton';
+import { confirmAction } from '../../utils/confirmToast';
 
 export default function PendingQueue() {
   const [proposals, setProposals] = useState([]);
@@ -38,7 +39,8 @@ export default function PendingQueue() {
 
   const runAll = async () => {
     if (!proposals.length) return;
-    if (!window.confirm(`Run duplicate check for all ${proposals.length} pending proposals?`)) return;
+    const confirmed = await confirmAction(`Run duplicate check for all ${proposals.length} pending proposals?`, 'Run All');
+    if (!confirmed) return;
     const ids = proposals.map((p) => p.id);
     setRunningIds(new Set(ids));
     await duplicateCheckApi.bulkRun(ids).catch(() => {});

@@ -96,6 +96,7 @@ export function AuthProvider({ children }) {
         err.response?.data?.message ||
         'Login failed. Check your username and password.';
       setError(msg);
+      toast.error(msg);
       return false;
     } finally {
       setLoading(false);

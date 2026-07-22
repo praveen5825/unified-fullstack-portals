@@ -36,220 +36,6 @@ function usePalette() {
   }), []);
 }
 
-// ── Month helpers ───────────────────────────────────────────────────────────
-function getMonthKey(date) {
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-}
-function calcTrend(current, previous) {
-  if (!previous) return current > 0 ? 100 : 0;
-  return Math.round(((current - previous) / previous) * 100);
-}
-
-// ══════════════════════════════════════════════════════════════════════════════
-// ── Welcome Banner ────────────────────────────────────────────────────────────
-// ══════════════════════════════════════════════════════════════════════════════
-function WelcomeBanner({ totalProposals, loading }) {
-  const navigate = useNavigate();
-  return (
-    <div
-      className="relative overflow-hidden rounded-2xl p-7 mb-6 animate-fade-in"
-      style={{
-        background: 'linear-gradient(135deg, var(--color-accent-from) 0%, var(--color-accent-to) 60%, #ec4899 100%)',
-        boxShadow: '0 8px 32px rgba(99,102,241,0.35)',
-      }}
-    >
-      {/* Decorative circles */}
-      <div className="absolute -top-10 -right-10 w-52 h-52 rounded-full opacity-10"
-        style={{ background: 'white', filter: 'blur(40px)' }} />
-      <div className="absolute bottom-0 right-24 w-32 h-32 rounded-full opacity-10"
-        style={{ background: 'white', filter: 'blur(30px)' }} />
-      {/* Sparkle icon */}
-      <div className="absolute top-5 right-6 opacity-20">
-        <Sparkles size={80} color="white" />
-      </div>
-
-      <div className="relative z-10">
-        <div className="flex items-center gap-2 mb-1">
-          <span className="text-2xl">👋</span>
-          <h2 className="text-xl font-bold text-white">Hello, Admin</h2>
-        </div>
-        <p className="text-white/80 text-sm max-w-md mb-5 leading-relaxed">
-          Welcome to <strong>CCRAS Unified Portal</strong>. Track proposals, monitor duplicate checks,
-          and review submissions across SPARK, PG-STAR and PDF-STAR.
-        </p>
-        <div className="flex items-center gap-3 flex-wrap">
-          <button
-            onClick={() => navigate('/p3/new-proposal')}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all"
-            style={{ background: 'rgba(255,255,255,0.2)', color: 'white', border: '1px solid rgba(255,255,255,0.3)', backdropFilter: 'blur(8px)' }}
-            onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.3)'}
-            onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.2)'}
-          >
-            <Plus size={15} /> New Proposal
-          </button>
-          <button
-            onClick={() => navigate('/p3/duplicate-check')}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all"
-            style={{ background: 'rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.85)', border: '1px solid rgba(255,255,255,0.15)' }}
-            onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.2)'}
-            onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
-          >
-            <Activity size={15} /> Run Duplicate Check
-          </button>
-        </div>
-      </div>
-
-      {/* Right side stat pill */}
-      <div
-        className="absolute right-6 bottom-6 hidden lg:flex items-center gap-3 px-4 py-2.5 rounded-xl"
-        style={{ background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.2)', backdropFilter: 'blur(10px)' }}
-      >
-        <FileText size={18} color="white" />
-        <div>
-          <div className="text-white/60 text-[10px] font-medium uppercase tracking-wide">Total Proposals</div>
-          <div className="text-white text-xl font-bold leading-none mt-0.5">
-            {loading ? '—' : totalProposals}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ══════════════════════════════════════════════════════════════════════════════
-// ── Selected + Awarded split card (above monthly chart) ───────────────────────
-// ══════════════════════════════════════════════════════════════════════════════
-function SelectedAwardedSplit({ selected, awarded, loading }) {
-  return (
-    <div
-      className="flex divide-x mb-0"
-      style={{ borderBottom: '1px solid var(--color-border-soft)', divideColor: 'var(--color-border-soft)' }}
-    >
-      {[
-        { label: 'Selected', value: selected, color: 'var(--color-warning)', dot: '#f59e0b' },
-        { label: 'Awarded',  value: awarded,  color: 'var(--color-success)', dot: '#10b981' },
-      ].map(({ label, value, color, dot }) => (
-        <div key={label} className="flex-1 px-5 py-4">
-          <div className="flex items-center gap-1.5 mb-1">
-            <span className="w-2 h-2 rounded-full shrink-0" style={{ background: dot }} />
-            <span className="text-xs font-medium" style={{ color: 'var(--color-text-muted)' }}>{label}</span>
-          </div>
-          <div className="text-3xl font-bold" style={{ color }}>
-            {loading ? <div className="skeleton h-7 w-14 rounded" /> : value}
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-// ══════════════════════════════════════════════════════════════════════════════
-// ── Scheme Donut Legend List ──────────────────────────────────────────────────
-// ══════════════════════════════════════════════════════════════════════════════
-function SchemeLegendList({ donutData, total }) {
-  return (
-    <div className="mt-2 space-y-2.5">
-      {donutData.map(({ name, value, itemStyle }) => {
-        const pct = total > 0 ? ((value / total) * 100).toFixed(1) : '0.0';
-        return (
-          <div key={name} className="flex items-center justify-between text-xs">
-            <div className="flex items-center gap-2 min-w-0">
-              <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: itemStyle.color }} />
-              <span className="font-medium truncate" style={{ color: 'var(--color-text-primary)' }}>{name}</span>
-            </div>
-            <div className="flex items-center gap-3 shrink-0 ml-2">
-              <span className="font-bold" style={{ color: 'var(--color-text-primary)' }}>{value}</span>
-              <span className="w-10 text-right" style={{ color: 'var(--color-text-faint)' }}>{pct}%</span>
-            </div>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
-// ══════════════════════════════════════════════════════════════════════════════
-// ── Top States Ranked List ────────────────────────────────────────────────────
-// ══════════════════════════════════════════════════════════════════════════════
-function RankedStateList({ states, loading }) {
-  if (loading) return (
-    <div className="space-y-4">
-      {Array(5).fill(0).map((_, i) => <div key={i} className="skeleton h-9 rounded-xl" />)}
-    </div>
-  );
-  if (!states.length) return (
-    <div className="text-sm text-center py-10" style={{ color: 'var(--color-text-faint)' }}>No state data yet.</div>
-  );
-  return (
-    <div className="space-y-3.5">
-      {states.map(({ state, count, pct }, i) => (
-        <div key={state}>
-          <div className="flex items-center justify-between mb-1.5">
-            <div className="flex items-center gap-2 min-w-0">
-              <span
-                className="text-[10px] font-bold w-5 h-5 flex items-center justify-center rounded-md shrink-0"
-                style={{ background: 'var(--color-surface-3)', color: 'var(--color-text-faint)' }}
-              >
-                {i + 1}
-              </span>
-              <span className="text-xs font-semibold truncate" style={{ color: 'var(--color-text-primary)' }}>
-                {state}
-              </span>
-            </div>
-            <span className="text-xs font-bold shrink-0 ml-2" style={{ color: 'var(--color-accent)' }}>
-              {count}
-            </span>
-          </div>
-          <div className="progress-bar ml-7">
-            <div
-              className="progress-fill"
-              style={{
-                width: `${pct}%`,
-                background: `linear-gradient(90deg, var(--color-accent-from), var(--color-accent-to))`,
-              }}
-            />
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-// ══════════════════════════════════════════════════════════════════════════════
-// ── Review Status Badge ───────────────────────────────────────────────────────
-// ══════════════════════════════════════════════════════════════════════════════
-function ReviewBadge({ value }) {
-  const cfg = {
-    flagged:    { label: 'Flagged',    bg: 'var(--color-danger-soft)',   color: 'var(--color-danger)'  },
-    cleared:    { label: 'Cleared',    bg: 'var(--color-success-soft)',  color: 'var(--color-success)' },
-    unreviewed: { label: 'Pending',    bg: 'var(--color-warning-soft)',  color: 'var(--color-warning)' },
-  };
-  const c = cfg[value] || cfg.unreviewed;
-  return (
-    <span
-      className="badge text-[10px]"
-      style={{ background: c.bg, color: c.color }}
-    >
-      {c.label}
-    </span>
-  );
-}
-
-// ══════════════════════════════════════════════════════════════════════════════
-// ── Similarity Score Indicator ────────────────────────────────────────────────
-// ══════════════════════════════════════════════════════════════════════════════
-function SimilarityBadge({ score }) {
-  const pct = Math.round(score ?? 0);
-  const color = pct >= 70 ? 'var(--color-danger)' : pct >= 40 ? 'var(--color-warning)' : 'var(--color-success)';
-  const bg    = pct >= 70 ? 'var(--color-danger-soft)' : pct >= 40 ? 'var(--color-warning-soft)' : 'var(--color-success-soft)';
-  return (
-    <span className="badge font-bold" style={{ background: bg, color }}>{pct}%</span>
-  );
-}
-
-// ══════════════════════════════════════════════════════════════════════════════
-// ── Main Dashboard ────────────────────────────────────────────────────────────
-// ══════════════════════════════════════════════════════════════════════════════
 export default function Dashboard() {
   const [proposals,  setProposals]  = useState([]);
   const [flagged,    setFlagged]    = useState([]);
@@ -619,146 +405,35 @@ export default function Dashboard() {
             </div>
             <Users size={15} style={{ color: 'var(--color-accent)' }} />
           </div>
-          <RankedStateList states={topStates} loading={loading} />
+          {loading ? (
+            <div className="space-y-3">{Array(5).fill(0).map((_, i) => <div key={i} className="skeleton h-8 rounded" />)}</div>
+          ) : topStates.length === 0 ? (
+            <div className="text-sm text-center py-8" style={{ color: 'var(--color-text-faint)' }}>No data</div>
+          ) : (
+            <div className="space-y-3">
+              {topStates.map(({ state, count, pct }, i) => (
+                <div key={state}>
+                  <div className="flex items-center justify-between text-xs mb-1">
+                    <div className="flex items-center gap-1.5">
+                      <span className="font-medium w-4 text-center" style={{ color: 'var(--color-text-faint)' }}>{i + 1}</span>
+                      <span className="truncate max-w-[100px]" style={{ color: 'var(--color-text-primary)' }}>{state}</span>
+                    </div>
+                    <span className="font-semibold" style={{ color: 'var(--color-accent)' }}>{count}</span>
+                  </div>
+                  <div className="progress-bar ml-6">
+                    <div className="progress-fill" style={{ width: `${pct}%`, background: `linear-gradient(90deg, var(--color-accent-from), var(--color-accent-to))` }} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
-      {/* ── Row 4: High-Risk Duplicate Matches ─────────────────────────────── */}
-      <div className="card overflow-hidden mb-4">
-        <div
-          className="flex items-center justify-between px-5 py-4"
-          style={{ borderBottom: '1px solid var(--color-border-soft)' }}
-        >
-          <div className="flex items-center gap-2">
-            <AlertTriangle size={16} style={{ color: 'var(--color-danger)' }} />
-            <div className="text-sm font-semibold" style={{ color: 'var(--color-text-primary)' }}>
-              High-Risk Duplicate Matches
-            </div>
-          </div>
-          <button
-            onClick={() => navigate('/duplicate-check')}
-            className="flex items-center gap-1 text-xs font-medium transition-colors"
-            style={{ color: 'var(--color-accent)' }}
-          >
-            View all <ArrowRight size={12} />
-          </button>
-        </div>
-
-        {flagLoading ? (
-          <div className="p-5 space-y-3">
-            {Array(4).fill(0).map((_, i) => (
-              <div key={i} className="flex gap-3 items-center">
-                <div className="skeleton h-4 w-24 rounded" />
-                <div className="skeleton h-4 flex-1 rounded" />
-                <div className="skeleton h-4 w-16 rounded" />
-                <div className="skeleton h-6 w-12 rounded-full" />
-              </div>
-            ))}
-          </div>
-        ) : flagged.length === 0 ? (
-          <div className="py-12 text-center">
-            <CheckCircle2 size={28} className="mx-auto mb-2" style={{ color: 'var(--color-success)' }} />
-            <div className="text-sm font-medium" style={{ color: 'var(--color-text-muted)' }}>
-              No high-risk duplicates found
-            </div>
-            <div className="text-xs mt-1" style={{ color: 'var(--color-text-faint)' }}>
-              Run a duplicate check to see results here
-            </div>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr style={{ borderBottom: '1px solid var(--color-border-soft)' }}>
-                  {['Proposal', 'Matched With', 'Scheme', 'Similarity', 'Review', 'Action'].map(h => (
-                    <th key={h} className="px-5 py-3 text-left text-xs font-semibold"
-                      style={{ color: 'var(--color-text-faint)', background: 'var(--color-surface-2)' }}>
-                      {h}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {flagged.map(({ proposal, match }, i) => (
-                  <tr
-                    key={`${proposal.id}-${match.id || i}`}
-                    className="animate-fade-in"
-                    style={{
-                      borderBottom: '1px solid var(--color-border-soft)',
-                      animationDelay: `${i * 40}ms`,
-                      animationFillMode: 'both',
-                    }}
-                    onMouseEnter={e => e.currentTarget.style.background = 'var(--color-surface-2)'}
-                    onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-                  >
-                    <td className="px-5 py-3">
-                      <div className="font-mono text-xs font-bold" style={{ color: 'var(--color-accent)' }}>
-                        {proposal.spark_id}
-                      </div>
-                      <div className="text-xs truncate max-w-[160px]" style={{ color: 'var(--color-text-muted)' }}>
-                        {proposal.title?.slice(0, 40) ?? '—'}…
-                      </div>
-                    </td>
-                    <td className="px-5 py-3 text-xs whitespace-nowrap" style={{ color: 'var(--color-text-primary)' }}>
-                      {match.matched_proposal?.student_name ?? '—'}
-                    </td>
-                    <td className="px-5 py-3">
-                      <SchemeTag scheme={proposal.scheme} small />
-                    </td>
-                    <td className="px-5 py-3">
-                      <SimilarityBadge score={match.overall_score} />
-                    </td>
-                    <td className="px-5 py-3">
-                      <ReviewBadge value={proposal.review_status} />
-                    </td>
-                    <td className="px-5 py-3">
-                      <button
-                        onClick={() => navigate('/p3/duplicate-check')}
-                        className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all"
-                        style={{
-                          background: 'var(--color-surface-3)',
-                          color: 'var(--color-text-muted)',
-                          border: '1px solid var(--color-border-soft)',
-                        }}
-                        onMouseEnter={e => {
-                          e.currentTarget.style.background = 'var(--color-accent-soft)';
-                          e.currentTarget.style.color = 'var(--color-accent)';
-                        }}
-                        onMouseLeave={e => {
-                          e.currentTarget.style.background = 'var(--color-surface-3)';
-                          e.currentTarget.style.color = 'var(--color-text-muted)';
-                        }}
-                      >
-                        <Eye size={11} /> View
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
-
-      {/* ── Row 5: Recent Proposals Table ──────────────────────────────────── */}
-      <div className="card overflow-hidden mb-2">
-        <div
-          className="flex items-center justify-between px-5 py-4"
-          style={{ borderBottom: '1px solid var(--color-border-soft)' }}
-        >
-          <div className="flex items-center gap-2">
-            <FileText size={16} style={{ color: 'var(--color-accent)' }} />
-            <div className="text-sm font-semibold" style={{ color: 'var(--color-text-primary)' }}>
-              Recent Proposals
-            </div>
-          </div>
-          <button
-            onClick={() => navigate('/p3/spark')}
-            className="flex items-center gap-1 text-xs font-medium"
-            style={{ color: 'var(--color-accent)' }}
-          >
-            View all <ArrowRight size={12} />
-          </button>
+      <div className="card overflow-hidden">
+        <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '1px solid var(--color-border-soft)' }}>
+          <div className="text-sm font-semibold" style={{ color: 'var(--color-text-primary)' }}>Recent Proposals</div>
+          <a href="/p3/spark" className="text-xs font-medium" style={{ color: 'var(--color-accent)' }}>View all →</a>
         </div>
 
         {loading ? (
@@ -826,30 +501,7 @@ export default function Dashboard() {
                       <StatusBadge value={p.status} />
                     </td>
                     <td className="px-5 py-3 text-xs whitespace-nowrap" style={{ color: 'var(--color-text-faint)' }}>
-                      {p.created_at
-                        ? new Date(p.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: '2-digit' })
-                        : '—'}
-                    </td>
-                    <td className="px-5 py-3">
-                      <button
-                        onClick={() => navigate(`/p3/spark`)}
-                        className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all"
-                        style={{
-                          background: 'var(--color-surface-3)',
-                          color: 'var(--color-text-muted)',
-                          border: '1px solid var(--color-border-soft)',
-                        }}
-                        onMouseEnter={e => {
-                          e.currentTarget.style.background = 'var(--color-accent-soft)';
-                          e.currentTarget.style.color = 'var(--color-accent)';
-                        }}
-                        onMouseLeave={e => {
-                          e.currentTarget.style.background = 'var(--color-surface-3)';
-                          e.currentTarget.style.color = 'var(--color-text-muted)';
-                        }}
-                      >
-                        <Eye size={11} /> View
-                      </button>
+                      {p.created_at ? new Date(p.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: '2-digit' }) : '—'}
                     </td>
                   </tr>
                 ))}

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import Topbar from '../layout/Topbar';
 import { proposalsApi } from '../api/duplicateCheck';
 import { FilePlus2, CheckCircle2, ChevronRight, Loader2, FileText, User, MapPin, FlaskConical, Calendar, Sparkles, Activity } from 'lucide-react';
@@ -42,7 +43,7 @@ export default function NewProposal() {
       setFeedback({ type: 'success', text: 'Proposal saved successfully. It has been added to the Duplicate Check pending queue.' });
       setStep(3);
     } catch (err) {
-      setFeedback({ type: 'error', text: 'Could not save proposal. Please check the fields and try again.' });
+      toast.error('Could not save proposal. Please check the fields and try again.');
       setSubmitting(false);
     }
   };
@@ -254,12 +255,7 @@ export default function NewProposal() {
               </div>
             </div>
 
-            {feedback?.type === 'error' && (
-              <div className="mt-5 text-sm rounded-xl px-4 py-3 flex items-center gap-2 animate-fade-in" style={{ background: 'var(--color-danger-soft)', color: 'var(--color-danger)' }}>
-                <span className="w-1.5 h-1.5 rounded-full" style={{ background: 'var(--color-danger)' }} />
-                {feedback.text}
-              </div>
-            )}
+            {/* Error feedback handled by toast */}
 
             <div className="mt-8 flex justify-end">
               <button type="submit" disabled={submitting} className="btn btn-primary px-8 py-2.5 flex items-center gap-2 text-sm">

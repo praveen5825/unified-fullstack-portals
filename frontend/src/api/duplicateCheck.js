@@ -14,6 +14,9 @@ export const proposalsApi = {
       headers: { 'Content-Type': 'multipart/form-data' },
     }),
   delete: (id) => client.delete(`${BASE}/proposals/${id}/`),
+  bulkImport: (scheme, formData) => client.post(`${BASE}/proposals/bulk-import/?scheme=${scheme}`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  }),
 };
 
 export const duplicateCheckApi = {
@@ -69,7 +72,11 @@ export const analyticsApi = {
 export const searchApi = {
   /**
    * Simple full-text search across all proposals.
-   * GET /api/duplicate-check/search/?q=…&scheme=…&status=…&year=…&page=1
+   * GET /api/duplicate-check/search/
+   *   ?q=…&search_in=both|title|synopsis&scheme=…&status=…&year=…&page=1
+   *
+   * search_in: "both" (default) | "title" | "synopsis"
+   * Returns ranked results using PostgreSQL FTS with icontains fallback.
    */
   globalSearch: (params) => client.get(`${BASE}/search/`, { params }),
 
@@ -77,6 +84,7 @@ export const searchApi = {
    * Boolean search — POST with { query, search_in, scheme, status, year, page }
    * query supports: AND  OR  NOT  "phrase"
    * search_in: "title" | "synopsis" | "both"
+   * Cascade: GIN FTS → on-the-fly FTS → icontains fallback (guaranteed results)
    */
   booleanSearch: (body) => client.post(`${BASE}/boolean-search/`, body),
 };

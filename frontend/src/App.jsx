@@ -49,7 +49,6 @@ export default function App() {
               <Route path="pgstar" element={<Pgstar />} />
               <Route path="proposals/:id" element={<ProposalDetail />} />
               <Route path="proposals/:id/edit" element={<EditProposal />} />
-              {/* ── New Features ─────────────────────────────────────── */}
               <Route path="analytics" element={<Analytics />} />
               <Route path="search" element={<GlobalSearch />} />
             </Route>

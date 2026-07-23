@@ -9,13 +9,14 @@ from .views import (
     analytics_overview, analytics_yearly, analytics_statewise,
     analytics_research_area, analytics_session, analytics_duplicate_stats,
     # Search
-    global_search, boolean_search,
+    global_search, boolean_search, bulk_import_proposals,
 )
 
 router = DefaultRouter()
 router.register('proposals', ProposalViewSet, basename='proposal')
 
 urlpatterns = [
+    path('proposals/bulk-import/', bulk_import_proposals, name='bulk-import'),
     path('', include(router.urls)),
     path('pending/', pending_queue, name='pending-queue'),
     path('bulk-run/', bulk_run_check, name='bulk-run-check'),

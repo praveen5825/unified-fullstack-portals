@@ -155,18 +155,19 @@ export default function Analytics() {
       xAxis: { type: 'category', data: labels, axisLine: { lineStyle: { color: cssVar('--color-border', '#232742') } }, axisLabel: { color: cssVar('--color-text-faint', '#475569'), fontSize: 11 } },
       yAxis: { type: 'value', minInterval: 1, splitLine: { lineStyle: { color: cssVar('--color-border', '#232742'), type: 'dashed' } }, axisLabel: { color: cssVar('--color-text-faint', '#475569'), fontSize: 11 } },
       series: [
-        { name: 'SPARK',    type: 'bar', stack: 'total', barMaxWidth: 50, data: yearly.map(r => r.spark   || 0), itemStyle: { color: spark,   borderRadius: [0,0,0,0] } },
-        { name: 'PG-STAR',  type: 'bar', stack: 'total', barMaxWidth: 50, data: yearly.map(r => r.pgstar  || 0), itemStyle: { color: pgstar,  borderRadius: [0,0,0,0] } },
-        { name: 'PDF-STAR', type: 'bar', stack: 'total', barMaxWidth: 50, data: yearly.map(r => r.pdfstar || 0), itemStyle: { color: pdfstar, borderRadius: [4,4,0,0] } },
+        { name: 'SPARK',    type: 'bar', stack: 'total', data: yearly.map(r => r.spark   || 0), itemStyle: { color: spark,   borderRadius: [0,0,0,0] } },
+        { name: 'PG-STAR',  type: 'bar', stack: 'total', data: yearly.map(r => r.pgstar  || 0), itemStyle: { color: pgstar,  borderRadius: [0,0,0,0] } },
+        { name: 'PDF-STAR', type: 'bar', stack: 'total', data: yearly.map(r => r.pdfstar || 0), itemStyle: { color: pdfstar, borderRadius: [4,4,0,0] } },
       ],
     };
   }, [yearly]);
 
   const statewiseOption = useMemo(() => {
     if (!statewise.length) return null;
+    const accent = cssVar('--color-accent', '#818cf8');
     return {
       tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
-      grid: { left: 120, right: 30, bottom: 16, top: 16, containLabel: false },
+      grid: { left: 120, right: 24, bottom: 16, top: 16, containLabel: false },
       xAxis: { type: 'value', splitLine: { lineStyle: { color: cssVar('--color-border', '#232742'), type: 'dashed' } }, axisLabel: { color: cssVar('--color-text-faint', '#475569'), fontSize: 10 } },
       yAxis: {
         type: 'category',
@@ -176,16 +177,12 @@ export default function Analytics() {
       },
       series: [{
         type: 'bar',
-        barMaxWidth: 24,
         data: [...statewise].reverse().map(r => r.total),
         itemStyle: {
           color: { type: 'linear', x: 0, y: 0, x2: 1, y2: 0, colorStops: [{ offset: 0, color: cssVar('--color-accent-from', '#6366f1') }, { offset: 1, color: cssVar('--color-accent-to', '#a855f7') }] },
-          borderRadius: [0, 6, 6, 0],
-          shadowColor: 'rgba(99, 102, 241, 0.2)',
-          shadowBlur: 8,
-          shadowOffsetY: 4
+          borderRadius: [0, 4, 4, 0],
         },
-        label: { show: true, position: 'right', color: cssVar('--color-text-primary', '#e2e8f0'), fontSize: 10, fontWeight: 'bold', formatter: '{c}' },
+        label: { show: true, position: 'right', color: cssVar('--color-text-muted', '#94a3b8'), fontSize: 10, formatter: '{c}' },
       }],
     };
   }, [statewise]);
@@ -198,16 +195,9 @@ export default function Analytics() {
       legend: { orient: 'vertical', right: 10, top: 'center', textStyle: { color: cssVar('--color-text-muted', '#94a3b8'), fontSize: 10 }, formatter: n => n.length > 22 ? n.slice(0, 22) + '…' : n },
       series: [{
         type: 'pie',
-        radius: ['45%', '75%'],
-        center: ['35%', '50%'],
+        radius: ['42%', '70%'],
+        center: ['38%', '50%'],
         avoidLabelOverlap: true,
-        itemStyle: {
-          borderRadius: 6,
-          borderColor: cssVar('--color-surface-2', '#1e2139'),
-          borderWidth: 2,
-          shadowColor: 'rgba(0, 0, 0, 0.2)',
-          shadowBlur: 10,
-        },
         label: { show: false },
         emphasis: { label: { show: true, fontSize: 13, fontWeight: 'bold' } },
         data: researchArea.map((r, i) => ({ value: r.total, name: r.research_area, itemStyle: { color: colors[i % colors.length] } })),
@@ -221,16 +211,15 @@ export default function Analytics() {
     return {
       tooltip: { trigger: 'axis' },
       grid: { left: 16, right: 16, bottom: 24, top: 16, containLabel: true },
-      xAxis: { type: 'category', data: session.map(r => r.session), axisLabel: { color: cssVar('--color-text-faint', '#475569'), fontSize: 10, rotate: 30 }, axisLine: { lineStyle: { color: cssVar('--color-border', '#232742') } }, boundaryGap: false },
+      xAxis: { type: 'category', data: session.map(r => r.session), axisLabel: { color: cssVar('--color-text-faint', '#475569'), fontSize: 10, rotate: 30 }, axisLine: { lineStyle: { color: cssVar('--color-border', '#232742') } } },
       yAxis: { type: 'value', minInterval: 1, splitLine: { lineStyle: { color: cssVar('--color-border', '#232742'), type: 'dashed' } }, axisLabel: { color: cssVar('--color-text-faint', '#475569'), fontSize: 10 } },
       series: [{
         type: 'line',
         smooth: true,
         data: session.map(r => r.total),
-        lineStyle: { color: accent, width: 3, shadowColor: 'rgba(129, 140, 248, 0.4)', shadowBlur: 10, shadowOffsetY: 4 },
-        itemStyle: { color: accent, borderWidth: 2 },
-        symbolSize: 8,
-        areaStyle: { color: { type: 'linear', x: 0, y: 0, x2: 0, y2: 1, colorStops: [{ offset: 0, color: accent + '66' }, { offset: 1, color: accent + '00' }] } },
+        lineStyle: { color: accent, width: 2 },
+        itemStyle: { color: accent },
+        areaStyle: { color: { type: 'linear', x: 0, y: 0, x2: 0, y2: 1, colorStops: [{ offset: 0, color: accent + '55' }, { offset: 1, color: accent + '00' }] } },
       }],
     };
   }, [session]);
@@ -244,9 +233,9 @@ export default function Analytics() {
       xAxis: { type: 'category', data: dupStats.map(r => r.year), axisLabel: { color: cssVar('--color-text-faint', '#475569') }, axisLine: { lineStyle: { color: cssVar('--color-border', '#232742') } } },
       yAxis: { type: 'value', minInterval: 1, splitLine: { lineStyle: { color: cssVar('--color-border', '#232742'), type: 'dashed' } }, axisLabel: { color: cssVar('--color-text-faint', '#475569'), fontSize: 11 } },
       series: [
-        { name: 'Flagged',    type: 'bar', stack: 'dup', barMaxWidth: 50, data: dupStats.map(r => r.flagged    || 0), itemStyle: { color: '#ef4444', borderRadius: [0,0,0,0] } },
-        { name: 'Cleared',    type: 'bar', stack: 'dup', barMaxWidth: 50, data: dupStats.map(r => r.cleared    || 0), itemStyle: { color: '#10b981', borderRadius: [0,0,0,0] } },
-        { name: 'Unreviewed', type: 'bar', stack: 'dup', barMaxWidth: 50, data: dupStats.map(r => r.unreviewed || 0), itemStyle: { color: '#64748b', borderRadius: [4,4,0,0] } },
+        { name: 'Flagged',    type: 'bar', stack: 'dup', data: dupStats.map(r => r.flagged    || 0), itemStyle: { color: '#ef4444', borderRadius: [0,0,0,0] } },
+        { name: 'Cleared',    type: 'bar', stack: 'dup', data: dupStats.map(r => r.cleared    || 0), itemStyle: { color: '#10b981', borderRadius: [0,0,0,0] } },
+        { name: 'Unreviewed', type: 'bar', stack: 'dup', data: dupStats.map(r => r.unreviewed || 0), itemStyle: { color: '#64748b', borderRadius: [4,4,0,0] } },
       ],
     };
   }, [dupStats]);

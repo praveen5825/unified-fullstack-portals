@@ -21,23 +21,26 @@ const SEARCH_IN_OPTS = [
 
 // Boolean operator quick-insert chips
 const BOOL_CHIPS = [
-  { label: 'AND',   op: ' AND ',   color: '#6366f1', desc: 'Both words must match' },
-  { label: 'OR',    op: ' OR ',    color: '#10b981', desc: 'Either word matches' },
-  { label: 'NOT',   op: ' NOT ',   color: '#ef4444', desc: 'Exclude this word' },
-  { label: '"phrase"', op: ' "" ', color: '#f59e0b', desc: 'Exact phrase match — place cursor between quotes' },
+  { label: 'AND',      op: ' AND ',  color: '#6366f1', desc: 'Both words must match' },
+  { label: 'OR',       op: ' OR ',   color: '#10b981', desc: 'Either word matches' },
+  { label: 'NOT',      op: ' NOT ',  color: '#ef4444', desc: 'Exclude this word' },
+  { label: '"phrase"', op: ' "" ',   color: '#f59e0b', desc: 'Exact phrase — place cursor between quotes' },
 ];
 
 // ── Snippet highlighter ───────────────────────────────────────────────────────
 function Highlight({ text, query }) {
   if (!text || !query) return <span>{text}</span>;
+  // Extract content words from boolean query (strip AND/OR/NOT)
   const words = query
     .split(/\s+/)
     .filter(w => !['AND', 'OR', 'NOT'].includes(w.toUpperCase()) && w.length > 1)
-    .map(w => w.replace(/['"]/g, ''));
+    .map(w => w.replace(/['"]/g, '').trim())
+    .filter(Boolean);
 
   if (!words.length) return <span>{text}</span>;
 
-  const pattern = new RegExp(`(${words.map(w => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')})`, 'gi');
+  const escaped = words.map(w => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+  const pattern = new RegExp(`(${escaped.join('|')})`, 'gi');
   const parts = text.split(pattern);
   return (
     <span>
@@ -126,6 +129,79 @@ function ResultCard({ result, query, onNavigate }) {
   );
 }
 
+// ── Smart Pagination ──────────────────────────────────────────────────────────
+function Pagination({ page, totalPages, onPageChange }) {
+  if (totalPages <= 1) return null;
+
+  // Build page number array with ellipsis
+  const buildPages = () => {
+    const pages = [];
+    const delta = 2; // pages around current
+    const left  = Math.max(2, page - delta);
+    const right = Math.min(totalPages - 1, page + delta);
+
+    pages.push(1);
+    if (left > 2) pages.push('...');
+    for (let p = left; p <= right; p++) pages.push(p);
+    if (right < totalPages - 1) pages.push('...');
+    if (totalPages > 1) pages.push(totalPages);
+    return pages;
+  };
+
+  const btnStyle = (active) => ({
+    minWidth: 32,
+    height: 32,
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 10,
+    fontSize: 12,
+    fontWeight: 600,
+    cursor: active === 'disabled' ? 'not-allowed' : 'pointer',
+    background: active === true ? 'var(--color-accent)' : 'var(--color-surface-2)',
+    color: active === true ? '#fff' : 'var(--color-text-muted)',
+    border: `1px solid ${active === true ? 'var(--color-accent)' : 'var(--color-border)'}`,
+    opacity: active === 'disabled' ? 0.4 : 1,
+    transition: 'all 0.15s',
+  });
+
+  return (
+    <div className="flex items-center justify-center gap-1.5 mt-6 flex-wrap">
+      {/* Prev */}
+      <button
+        disabled={page === 1}
+        onClick={() => onPageChange(page - 1)}
+        style={btnStyle(page === 1 ? 'disabled' : false)}
+      >
+        <ChevronLeft size={14} />
+      </button>
+
+      {buildPages().map((p, i) =>
+        p === '...'
+          ? <span key={`ellipsis-${i}`} style={{ color: 'var(--color-text-faint)', fontSize: 12, padding: '0 4px' }}>…</span>
+          : (
+            <button
+              key={p}
+              onClick={() => onPageChange(p)}
+              style={btnStyle(p === page)}
+            >
+              {p}
+            </button>
+          )
+      )}
+
+      {/* Next */}
+      <button
+        disabled={page === totalPages}
+        onClick={() => onPageChange(page + 1)}
+        style={btnStyle(page === totalPages ? 'disabled' : false)}
+      >
+        <ChevronRightIcon size={14} />
+      </button>
+    </div>
+  );
+}
+
 // ════════════════════════════════════════════════════════════════════════════════
 // ── GLOBAL SEARCH PAGE ─────────────────────────────────────────────────────────
 // ════════════════════════════════════════════════════════════════════════════════
@@ -206,9 +282,23 @@ export default function GlobalSearch() {
     try {
       let res;
       if (m === 'boolean') {
-        res = await searchApi.booleanSearch({ query: trimmed, search_in: si, scheme: sc || undefined, status: st || undefined, page: pg });
+        // Boolean search — POST with all params including search_in
+        res = await searchApi.booleanSearch({
+          query:     trimmed,
+          search_in: si,
+          scheme:    sc || undefined,
+          status:    st || undefined,
+          page:      pg,
+        });
       } else {
-        res = await searchApi.globalSearch({ q: trimmed, scheme: sc || undefined, status: st || undefined, page: pg });
+        // Simple search — GET with search_in param too
+        res = await searchApi.globalSearch({
+          q:         trimmed,
+          search_in: si,
+          scheme:    sc || undefined,
+          status:    st || undefined,
+          page:      pg,
+        });
       }
       setResults(res.data.results || []);
       setTotal(res.data.count || 0);
@@ -218,6 +308,7 @@ export default function GlobalSearch() {
       console.error('Search error', e);
       setResults([]);
       setTotal(0);
+      setTotalPages(1);
     } finally {
       setLoading(false);
     }
@@ -238,12 +329,13 @@ export default function GlobalSearch() {
     const el = inputRef.current;
     if (!el) return;
     const start = el.selectionStart;
-    const end = el.selectionEnd;
+    const end   = el.selectionEnd;
     const newVal = query.slice(0, start) + op + query.slice(end);
     setQuery(newVal);
     setTimeout(() => {
       el.focus();
-      const pos = start + op.length;
+      // For phrase chip, put cursor between the quotes
+      const pos = op === ' "" ' ? start + 2 : start + op.length;
       el.setSelectionRange(pos, pos);
     }, 0);
   };
@@ -253,6 +345,31 @@ export default function GlobalSearch() {
     doSearch(query, mode, searchIn, scheme, statusFilter, p);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
+
+  // ── Search-in toggle (shared between both modes) ───────────────────────────
+  const SearchInToggle = () => (
+    <div className="flex items-center gap-2 mt-3">
+      <span className="text-[10px] font-semibold" style={{ color: 'var(--color-text-faint)' }}>Search In:</span>
+      {SEARCH_IN_OPTS.map(opt => (
+        <button
+          key={opt.value}
+          onClick={() => setSearchIn(opt.value)}
+          title={opt.desc}
+          className="px-2.5 py-1 rounded-lg text-[10px] font-semibold transition-all duration-150"
+          style={{
+            background: searchIn === opt.value ? 'var(--color-accent)' : 'var(--color-surface-3)',
+            color:      searchIn === opt.value ? '#fff' : 'var(--color-text-muted)',
+            border:     `1px solid ${searchIn === opt.value ? 'var(--color-accent)' : 'var(--color-border)'}`,
+          }}
+        >
+          {opt.label}
+        </button>
+      ))}
+      <span className="text-[10px] ml-1" style={{ color: 'var(--color-text-faint)' }}>
+        {SEARCH_IN_OPTS.find(o => o.value === searchIn)?.desc}
+      </span>
+    </div>
+  );
 
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
@@ -272,8 +389,8 @@ export default function GlobalSearch() {
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all duration-200"
             style={{
               background: mode === 'simple' ? 'var(--color-accent)' : 'var(--color-surface-3)',
-              color: mode === 'simple' ? '#fff' : 'var(--color-text-muted)',
-              border: `1px solid ${mode === 'simple' ? 'var(--color-accent)' : 'var(--color-border)'}`,
+              color:      mode === 'simple' ? '#fff' : 'var(--color-text-muted)',
+              border:     `1px solid ${mode === 'simple' ? 'var(--color-accent)' : 'var(--color-border)'}`,
             }}
           >
             <Zap size={11} /> Simple Search
@@ -283,8 +400,8 @@ export default function GlobalSearch() {
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all duration-200"
             style={{
               background: mode === 'boolean' ? 'var(--color-accent)' : 'var(--color-surface-3)',
-              color: mode === 'boolean' ? '#fff' : 'var(--color-text-muted)',
-              border: `1px solid ${mode === 'boolean' ? 'var(--color-accent)' : 'var(--color-border)'}`,
+              color:      mode === 'boolean' ? '#fff' : 'var(--color-text-muted)',
+              border:     `1px solid ${mode === 'boolean' ? 'var(--color-accent)' : 'var(--color-border)'}`,
             }}
           >
             <BookText size={11} /> Boolean Search
@@ -297,7 +414,7 @@ export default function GlobalSearch() {
             className="flex-1 flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200"
             style={{ background: 'var(--color-surface-3)', border: '1.5px solid var(--color-border)' }}
             onFocus={e => { e.currentTarget.style.borderColor = 'var(--color-accent)'; e.currentTarget.style.boxShadow = '0 0 0 3px var(--color-accent-soft)'; }}
-            onBlur={e => { e.currentTarget.style.borderColor = 'var(--color-border)'; e.currentTarget.style.boxShadow = 'none'; }}
+            onBlur={e =>  { e.currentTarget.style.borderColor = 'var(--color-border)';  e.currentTarget.style.boxShadow = 'none'; }}
           >
             <Search size={16} style={{ color: 'var(--color-text-faint)', flexShrink: 0 }} />
             <input
@@ -324,10 +441,10 @@ export default function GlobalSearch() {
             disabled={!query.trim() || loading}
             className="flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-semibold transition-all duration-200"
             style={{
-              background: 'var(--color-accent)',
-              color: '#fff',
-              opacity: !query.trim() || loading ? 0.5 : 1,
-              boxShadow: '0 4px 14px rgba(99,102,241,0.4)',
+              background:  'var(--color-accent)',
+              color:       '#fff',
+              opacity:     !query.trim() || loading ? 0.5 : 1,
+              boxShadow:   '0 4px 14px rgba(99,102,241,0.4)',
             }}
           >
             {loading ? <Loader2 size={15} className="animate-spin" /> : <Search size={15} />}
@@ -381,30 +498,13 @@ export default function GlobalSearch() {
               </div>
             </div>
 
-            {/* Search-in toggle */}
-            <div className="flex items-center gap-2 mt-3">
-              <span className="text-[10px] font-semibold" style={{ color: 'var(--color-text-faint)' }}>Search In:</span>
-              {SEARCH_IN_OPTS.map(opt => (
-                <button
-                  key={opt.value}
-                  onClick={() => setSearchIn(opt.value)}
-                  title={opt.desc}
-                  className="px-2.5 py-1 rounded-lg text-[10px] font-semibold transition-all duration-150"
-                  style={{
-                    background: searchIn === opt.value ? 'var(--color-accent)' : 'var(--color-surface-3)',
-                    color: searchIn === opt.value ? '#fff' : 'var(--color-text-muted)',
-                    border: `1px solid ${searchIn === opt.value ? 'var(--color-accent)' : 'var(--color-border)'}`,
-                  }}
-                >
-                  {opt.label}
-                </button>
-              ))}
-              <span className="text-[10px] ml-2" style={{ color: 'var(--color-text-faint)' }}>
-                {SEARCH_IN_OPTS.find(o => o.value === searchIn)?.desc}
-              </span>
-            </div>
+            {/* Search-in toggle (boolean mode) */}
+            <SearchInToggle />
           </div>
         )}
+
+        {/* Search-in toggle visible in simple mode too */}
+        {mode === 'simple' && <SearchInToggle />}
 
         {/* Filters Row */}
         <div className="mt-4 flex items-center gap-3 flex-wrap">
@@ -454,8 +554,21 @@ export default function GlobalSearch() {
               {loading
                 ? 'Searching…'
                 : total > 0
-                  ? <><strong style={{ color: 'var(--color-text-primary)' }}>{total}</strong> result{total !== 1 ? 's' : ''} for <strong style={{ color: 'var(--color-accent)' }}>"{query}"</strong>
-                      {searchType && <span className="ml-2 text-[10px]" style={{ color: 'var(--color-text-faint)' }}>({searchType === 'fts' ? 'PostgreSQL FTS' : 'text match'})</span>}
+                  ? <>
+                      <strong style={{ color: 'var(--color-text-primary)' }}>{total}</strong>
+                      {' '}result{total !== 1 ? 's' : ''} for{' '}
+                      <strong style={{ color: 'var(--color-accent)' }}>"{query}"</strong>
+                      {searchIn !== 'both' && (
+                        <span className="ml-2 text-[10px] px-2 py-0.5 rounded-full"
+                          style={{ background: 'rgba(99,102,241,0.1)', color: 'var(--color-accent)' }}>
+                          in {searchIn}
+                        </span>
+                      )}
+                      {searchType && (
+                        <span className="ml-2 text-[10px]" style={{ color: 'var(--color-text-faint)' }}>
+                          ({searchType === 'fts' ? 'PostgreSQL FTS' : 'text match'})
+                        </span>
+                      )}
                     </>
                   : <span>No results found for <strong>"{query}"</strong> — try different keywords or operators.</span>
               }
@@ -474,61 +587,31 @@ export default function GlobalSearch() {
           </div>
 
           {/* Cards */}
-          <div className="space-y-3">
-            {results.map(r => (
-              <ResultCard
-                key={r.id}
-                result={r}
-                query={query}
-                onNavigate={id => navigate(`/proposals/${id}`)}
-              />
-            ))}
-          </div>
+          {loading
+            ? (
+              <div className="space-y-3">
+                {[1, 2, 3].map(i => (
+                  <div key={i} className="rounded-2xl p-5 animate-pulse"
+                    style={{ background: 'var(--color-surface-2)', border: '1px solid var(--color-border)', height: 100 }} />
+                ))}
+              </div>
+            )
+            : (
+              <div className="space-y-3">
+                {results.map(r => (
+                  <ResultCard
+                    key={r.id}
+                    result={r}
+                    query={query}
+                    onNavigate={id => navigate(`/proposals/${id}`)}
+                  />
+                ))}
+              </div>
+            )
+          }
 
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="flex items-center justify-center gap-2 mt-6">
-              <button
-                disabled={page === 1}
-                onClick={() => handlePageChange(page - 1)}
-                className="px-3 py-1.5 rounded-xl text-xs transition-all"
-                style={{
-                  background: 'var(--color-surface-2)',
-                  border: '1px solid var(--color-border)',
-                  color: page === 1 ? 'var(--color-text-faint)' : 'var(--color-text-muted)',
-                  opacity: page === 1 ? 0.4 : 1,
-                }}
-              >← Prev</button>
-
-              {Array.from({ length: Math.min(7, totalPages) }, (_, i) => {
-                const p = i + 1;
-                return (
-                  <button
-                    key={p}
-                    onClick={() => handlePageChange(p)}
-                    className="w-8 h-8 rounded-xl text-xs font-semibold transition-all"
-                    style={{
-                      background: page === p ? 'var(--color-accent)' : 'var(--color-surface-2)',
-                      color: page === p ? '#fff' : 'var(--color-text-muted)',
-                      border: `1px solid ${page === p ? 'var(--color-accent)' : 'var(--color-border)'}`,
-                    }}
-                  >{p}</button>
-                );
-              })}
-
-              <button
-                disabled={page === totalPages}
-                onClick={() => handlePageChange(page + 1)}
-                className="px-3 py-1.5 rounded-xl text-xs transition-all"
-                style={{
-                  background: 'var(--color-surface-2)',
-                  border: '1px solid var(--color-border)',
-                  color: page === totalPages ? 'var(--color-text-faint)' : 'var(--color-text-muted)',
-                  opacity: page === totalPages ? 0.4 : 1,
-                }}
-              >Next →</button>
-            </div>
-          )}
+          {/* Smart Pagination */}
+          <Pagination page={page} totalPages={totalPages} onPageChange={handlePageChange} />
         </div>
       )}
 
@@ -541,17 +624,33 @@ export default function GlobalSearch() {
           <Search size={40} className="mx-auto mb-4" style={{ color: 'var(--color-text-faint)' }} />
           <p className="text-sm font-semibold mb-1" style={{ color: 'var(--color-text-primary)' }}>Search All Proposals</p>
           <p className="text-xs mb-5" style={{ color: 'var(--color-text-faint)' }}>
-            Use <strong style={{ color: 'var(--color-accent)' }}>Simple Search</strong> for quick lookups, or switch to <strong style={{ color: 'var(--color-accent)' }}>Boolean Search</strong> for advanced queries using AND / OR / NOT / "phrases".
+            Use <strong style={{ color: 'var(--color-accent)' }}>Simple Search</strong> for quick lookups, or switch to{' '}
+            <strong style={{ color: 'var(--color-accent)' }}>Boolean Search</strong> for advanced queries using AND / OR / NOT / "phrases".
+            <br />
+            <span className="mt-1 inline-block">Use <strong>Search In</strong> to restrict to title-only or full synopsis.</span>
           </p>
           <div className="flex justify-center gap-3 flex-wrap text-[11px]">
-            {['"clinical trial" AND ayurveda', 'cancer OR diabetes', 'ayurveda NOT synthetic', 'pharmacological SPARK'].map(ex => (
+            {[
+              { q: '"clinical trial" AND ayurveda', m: 'boolean' },
+              { q: 'cancer OR diabetes', m: 'boolean' },
+              { q: 'ayurveda NOT synthetic', m: 'boolean' },
+              { q: 'pharmacological', m: 'simple' },
+            ].map(ex => (
               <button
-                key={ex}
-                onClick={() => { setQuery(ex); setMode('boolean'); setTimeout(handleSubmit, 50); }}
+                key={ex.q}
+                onClick={() => {
+                  setQuery(ex.q);
+                  setMode(ex.m);
+                  setTimeout(() => {
+                    setPage(1);
+                    setSearchParams({ q: ex.q });
+                    doSearch(ex.q, ex.m, searchIn, scheme, statusFilter, 1);
+                  }, 50);
+                }}
                 className="px-3 py-1.5 rounded-xl font-medium transition-all hover:scale-105"
                 style={{ background: 'var(--color-surface-3)', color: 'var(--color-accent)', border: '1px solid var(--color-border)' }}
               >
-                {ex}
+                {ex.q}
               </button>
             ))}
           </div>

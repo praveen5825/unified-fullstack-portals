@@ -1,5 +1,4 @@
 import { createContext, useContext, useState, useCallback, useEffect } from 'react';
-import toast from 'react-hot-toast';
 import client from '../api/client';
 
 const AuthContext = createContext(null);
@@ -86,9 +85,8 @@ export function AuthProvider({ children }) {
           initials: getInitials(profile),
           displayName: getDisplayName(profile),
         });
-        toast.success(`Welcome back, ${getDisplayName(profile)}!`);
       } catch {
-        toast.success('Successfully logged in');
+        // Non-fatal: profile defaults gracefully
       }
 
       return true;
@@ -110,7 +108,6 @@ export function AuthProvider({ children }) {
     localStorage.removeItem('refresh_token');
     setUser(null);
     setUserProfile(null);
-    toast.success('Logged out successfully');
   }, []);
 
   return (
